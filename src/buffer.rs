@@ -56,6 +56,11 @@ impl Buffer {
             self.lines.drain(start.line+1..end.line);
         }
     }
+
+    /// Remove a range of lines inclusively
+    pub fn remove_lines(&mut self, start_line: usize, end_line: usize) {
+            self.lines.drain(start_line..end_line+1);
+    }
 }
 
 #[test]
@@ -133,4 +138,14 @@ fn buffer_remove_range_multi_line() {
     buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["hello".to_string(), "la".to_string()]);
+}
+
+#[test]
+fn buffer_remove_lines() {
+    let mut buf = Buffer::new();
+
+    buf.lines = vec!["hello".to_string(), "bye".to_string(), "hola".to_string(), "bob".to_string()];
+    buf.remove_lines(1, 2);
+
+    assert!(buf.lines == vec!["hello".to_string(), "bob".to_string()]);
 }
