@@ -21,8 +21,10 @@ impl Buffer {
         *line = line[..cursor.column].to_string() + text + &line[cursor.column..];
     }
 
-    pub fn insert_line(&mut self, line: usize, text: String) {
-        self.lines.insert(line, text);
+    pub fn insert_lines(&mut self, line_index: usize, lines: Vec<String>) {
+        for (i, line) in lines.into_iter().enumerate() {
+            self.lines.insert(line_index+i, line);
+        }
     }
 
     /// Remove all characters between the from and to cursors inclusively
@@ -64,23 +66,23 @@ impl Buffer {
 }
 
 #[test]
-fn buffer_insert_line_empty() {
+fn buffer_insert_lines_empty() {
     let mut buf = Buffer::new();
 
     buf.lines = vec![];
-    buf.insert_line(0, "asdf".to_string());
+    buf.insert_lines(0, vec!["asdf".to_string(), "boo".to_string()]);
 
-    assert!(buf.lines == vec!["asdf".to_string()]);
+    assert!(buf.lines == vec!["asdf".to_string(), "boo".to_string()]);
 }
 
 #[test]
-fn buffer_insert_line_middle() {
+fn buffer_insert_lines_middle() {
     let mut buf = Buffer::new();
 
     buf.lines = vec!["helloworld!".to_string(), "bye".to_string()];
-    buf.insert_line(1, "asdf".to_string());
+    buf.insert_lines(1, vec!["asdf".to_string(), "boo".to_string()]);
 
-    assert!(buf.lines == vec!["helloworld!".to_string(), "asdf".to_string(), "bye".to_string()]);
+    assert!(buf.lines == vec!["helloworld!".to_string(), "asdf".to_string(), "boo".to_string(), "bye".to_string()]);
 }
 
 #[test]
@@ -88,7 +90,7 @@ fn buffer_insert_line_end() {
     let mut buf = Buffer::new();
 
     buf.lines = vec!["helloworld!".to_string(), "bye".to_string()];
-    buf.insert_line(2, "asdf".to_string());
+    buf.insert_lines(2, vec!["asdf".to_string()]);
 
     assert!(buf.lines == vec!["helloworld!".to_string(), "bye".to_string(), "asdf".to_string()]);
 }
