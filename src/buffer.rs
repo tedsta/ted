@@ -21,6 +21,10 @@ impl Buffer {
         *line = line[..cursor.column].to_string() + text + &line[cursor.column..];
     }
 
+    pub fn insert_line(&mut self, line: usize, text: String) {
+        self.lines.insert(line, text);
+    }
+
     /// Remove all characters between the from and to cursors inclusively
     /// Order of from and to cursors does not matter
     pub fn remove_range(&mut self, from: &Cursor, to: &Cursor) {
@@ -55,12 +59,41 @@ impl Buffer {
 }
 
 #[test]
+fn buffer_insert_line_empty() {
+    let mut buf = Buffer::new();
+
+    buf.lines = vec![];
+    buf.insert_line(0, "asdf".to_string());
+
+    assert!(buf.lines == vec!["asdf".to_string()]);
+}
+
+#[test]
+fn buffer_insert_line_middle() {
+    let mut buf = Buffer::new();
+
+    buf.lines = vec!["helloworld!".to_string(), "bye".to_string()];
+    buf.insert_line(1, "asdf".to_string());
+
+    assert!(buf.lines == vec!["helloworld!".to_string(), "asdf".to_string(), "bye".to_string()]);
+}
+
+#[test]
+fn buffer_insert_line_end() {
+    let mut buf = Buffer::new();
+
+    buf.lines = vec!["helloworld!".to_string(), "bye".to_string()];
+    buf.insert_line(2, "asdf".to_string());
+
+    assert!(buf.lines == vec!["helloworld!".to_string(), "bye".to_string(), "asdf".to_string()]);
+}
+
+#[test]
 fn buffer_insert() {
     let mut buf = Buffer::new();
     let cursor = Cursor { line: 0, column: 5 };
 
     buf.lines = vec!["helloworld!".to_string(), "bye".to_string()];
-
     buf.insert(cursor, ", ");
 
     assert!(buf.lines == vec!["hello, world!".to_string(), "bye".to_string()]);
@@ -73,7 +106,6 @@ fn buffer_remove_range_same_line() {
     let to = Cursor { line: 0, column: 6 };
 
     buf.lines = vec!["hello, world!".to_string(), "bye".to_string()];
-
     buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["helloworld!".to_string(), "bye".to_string()]);
@@ -86,7 +118,6 @@ fn buffer_remove_range_two_lines() {
     let to = Cursor { line: 1, column: 1 };
 
     buf.lines = vec!["hello, world!".to_string(), "bye".to_string()];
-
     buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["hello".to_string(), "e".to_string()]);
@@ -99,7 +130,6 @@ fn buffer_remove_range_multi_line() {
     let to = Cursor { line: 2, column: 1 };
 
     buf.lines = vec!["hello, world!".to_string(), "bye".to_string(), "hola".to_string()];
-
     buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["hello".to_string(), "la".to_string()]);
