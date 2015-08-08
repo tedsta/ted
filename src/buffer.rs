@@ -29,7 +29,7 @@ impl Buffer {
 
     /// Remove all characters between the from and to cursors inclusively
     /// Order of from and to cursors does not matter
-    pub fn remove_range(&mut self, from: &Cursor, to: &Cursor) {
+    pub fn remove_range(&mut self, from: &Cursor, to: &Cursor) -> Vec<String> {
         // Figure out which cursor is actually the starting point
         let (start, end) =
             if from.line < to.line {
@@ -46,22 +46,25 @@ impl Buffer {
 
         if start.line == end.line {
             // Start and end are on same line, remove characters between them
-            self.lines[start.line].drain(start.column..end.column+1);
+            vec![self.lines[start.line].drain(start.column..end.column+1).collect()]
         } else {
             // Start and end are on different lines
             // On start line, remove all characters after start column
             // On end line, remove all characters before end column
-            self.lines[start.line].drain(start.column..);
-            self.lines[end.line].drain(..end.column+1);
+            let start_line: String = self.lines[start.line].drain(start.column..).collect();
+            let end_line: String = self.lines[end.line].drain(..end.column+1).collect();
 
             // Delete lines between start and end cursors
-            self.lines.drain(start.line+1..end.line);
+            let mut lines: Vec<String> = vec![start_line];
+            lines.push_all(self.lines.drain(start.line+1..end.line).collect::<Vec<String>>().as_slice());
+            lines.push(end_line);
+            lines
         }
     }
 
     /// Remove a range of lines inclusively
-    pub fn remove_lines(&mut self, start_line: usize, end_line: usize) {
-            self.lines.drain(start_line..end_line+1);
+    pub fn remove_lines(&mut self, start_line: usize, end_line: usize) -> Vec<String> {
+            self.lines.drain(start_line..end_line+1).collect()
     }
 }
 
@@ -113,9 +116,10 @@ fn buffer_remove_range_same_line() {
     let to = Cursor { line: 0, column: 6 };
 
     buf.lines = vec!["hello, world!".to_string(), "bye".to_string()];
-    buf.remove_range(&from, &to);
+    let removed = buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["helloworld!".to_string(), "bye".to_string()]);
+    assert!(removed == vec![", ".to_string()]);
 }
 
 #[test]
@@ -125,9 +129,10 @@ fn buffer_remove_range_two_lines() {
     let to = Cursor { line: 1, column: 1 };
 
     buf.lines = vec!["hello, world!".to_string(), "bye".to_string()];
-    buf.remove_range(&from, &to);
+    let removed = buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["hello".to_string(), "e".to_string()]);
+    assert!(removed == vec![", world!".to_string(), "by".to_string()]);
 }
 
 #[test]
@@ -137,9 +142,10 @@ fn buffer_remove_range_multi_line() {
     let to = Cursor { line: 2, column: 1 };
 
     buf.lines = vec!["hello, world!".to_string(), "bye".to_string(), "hola".to_string()];
-    buf.remove_range(&from, &to);
+    let removed = buf.remove_range(&from, &to);
 
     assert!(buf.lines == vec!["hello".to_string(), "la".to_string()]);
+    assert!(removed == vec![", world!".to_string(), "bye".to_string(), "ho".to_string()]);
 }
 
 #[test]
@@ -147,7 +153,8 @@ fn buffer_remove_lines() {
     let mut buf = Buffer::new();
 
     buf.lines = vec!["hello".to_string(), "bye".to_string(), "hola".to_string(), "bob".to_string()];
-    buf.remove_lines(1, 2);
+    let removed = buf.remove_lines(1, 2);
 
     assert!(buf.lines == vec!["hello".to_string(), "bob".to_string()]);
+    assert!(removed == vec!["bye".to_string(), "hola".to_string()]);
 }
