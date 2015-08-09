@@ -16,9 +16,29 @@ impl Buffer {
         }
     }
 
-    pub fn insert(&mut self, cursor: Cursor, text: &str) {
-        let ref mut line = self.lines[cursor.line];
-        *line = line[..cursor.column].to_string() + text + &line[cursor.column..];
+    pub fn insert(&mut self, cursor: &Cursor, text: &str) {
+        let lines = text.split("\n");
+        let mut line_index = cursor.line;
+
+        // Since we reversed it, first line is actually last, so insert this line in place
+        {
+            let ref mut line = self.lines[line_index];
+            *line = line[..cursor.column].to_string() + lines.clone().take(1).next().unwrap() +
+                    &line[cursor.column..];
+            line_index += 1;
+        }
+
+        let count = lines.clone().count();
+        for (i, line) in lines.enumerate().skip(1) {
+            if i < count-1 {
+                // Not at the last line yet
+                self.lines.insert(line_index, line.to_string());
+                line_index += 1;
+            } else {
+                // For last line, prepend text to line
+                self.lines[line_index] = line.to_string() + &self.lines[line_index];
+            }
+        }
     }
 
     pub fn insert_lines(&mut self, line_num: usize, lines: &Vec<String>) {
@@ -99,14 +119,25 @@ fn buffer_insert_line_end() {
 }
 
 #[test]
-fn buffer_insert() {
+fn buffer_insert_no_lines() {
     let mut buf = Buffer::new();
     let cursor = Cursor { line: 0, column: 5 };
 
     buf.lines = vec!["helloworld!".to_string(), "bye".to_string()];
-    buf.insert(cursor, ", ");
+    buf.insert(&cursor, ", ");
 
     assert!(buf.lines == vec!["hello, world!".to_string(), "bye".to_string()]);
+}
+
+#[test]
+fn buffer_insert_two_lines() {
+    let mut buf = Buffer::new();
+    let cursor = Cursor { line: 0, column: 5 };
+
+    buf.lines = vec!["hello".to_string(), "bye".to_string()];
+    buf.insert(&cursor, "s\nworld\n");
+
+    assert!(buf.lines == vec!["hellos".to_string(), "world".to_string(), "bye".to_string()]);
 }
 
 #[test]
