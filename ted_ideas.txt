@@ -1,0 +1,14 @@
+- Move cursor
+- Select with character granularity
+- Select with line granularity
+- Delete selection
+- Jump to declarations/definitions:
+    - function
+    - variable
+    - struct
+    - enum
+- Highlight current text object cursor is on, and move up/down nested levels:
+    - words
+    - member/parameter variable declarations
+    - variable definitions
+    - blocks (if, while, match, fn, struct, enum, etc)
