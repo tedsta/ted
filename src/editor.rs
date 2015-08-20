@@ -26,46 +26,46 @@ impl Editor {
 #[test]
 fn editor_log_command_empty() {
     let mut editor = Editor::new();
-    editor.log_command(Command::InsertLines(0, vec!["asdf".to_string()]));
+    editor.log_command(Command::Insert(0, "asdf".to_string()));
 
-    assert!(editor.log == vec![Command::InsertLines(0, vec!["asdf".to_string()])]);
+    assert!(editor.log == vec![Command::Insert(0, "asdf".to_string())]);
     assert!(editor.log_index == 0);
 }
 
 #[test]
 fn editor_log_command_beginning() {
     let mut editor = Editor::new();
-    editor.log_command(Command::InsertLines(0, vec!["asdf".to_string()]));
+    editor.log_command(Command::Insert(0, "asdf".to_string()));
     editor.log_index = 0;
-    editor.log_command(Command::InsertLines(0, vec!["hi".to_string()]));
+    editor.log_command(Command::Insert(0, "hi".to_string()));
 
-    assert!(editor.log == vec![Command::InsertLines(0, vec!["asdf".to_string()]),
-                               Command::InsertLines(0, vec!["hi".to_string()])]);
+    assert!(editor.log == vec![Command::Insert(0, "asdf".to_string()),
+                               Command::Insert(0, "hi".to_string())]);
     assert!(editor.log_index == 1);
 }
 
 #[test]
 fn editor_log_command_middle() {
     let mut editor = Editor::new();
-    editor.log_command(Command::InsertLines(0, vec!["asdf".to_string()]));
-    editor.log_command(Command::InsertLines(0, vec!["asdf".to_string()]));
-    editor.log_command(Command::InsertLines(0, vec!["asdf".to_string()]));
+    editor.log_command(Command::Insert(0, "asdf".to_string()));
+    editor.log_command(Command::Insert(0, "asdf".to_string()));
+    editor.log_command(Command::Insert(0, "asdf".to_string()));
     editor.log_index = 1;
-    editor.log_command(Command::InsertLines(0, vec!["hi".to_string()]));
+    editor.log_command(Command::Insert(0, "hi".to_string()));
 
-    assert!(editor.log == vec![Command::InsertLines(0, vec!["asdf".to_string()]),
-                               Command::InsertLines(0, vec!["asdf".to_string()]),
-                               Command::InsertLines(0, vec!["hi".to_string()])]);
+    assert!(editor.log == vec![Command::Insert(0, "asdf".to_string()),
+                               Command::Insert(0, "asdf".to_string()),
+                               Command::Insert(0, "hi".to_string())]);
     assert!(editor.log_index == 2);
 }
 
 #[test]
 fn editor_log_command_end() {
     let mut editor = Editor::new();
-    editor.log_command(Command::InsertLines(0, vec!["asdf".to_string()]));
-    editor.log_command(Command::InsertLines(0, vec!["hi".to_string()]));
+    editor.log_command(Command::Insert(0, "asdf".to_string()));
+    editor.log_command(Command::Insert(0, "hi".to_string()));
 
-    assert!(editor.log == vec![Command::InsertLines(0, vec!["asdf".to_string()]),
-                               Command::InsertLines(0, vec!["hi".to_string()])]);
+    assert!(editor.log == vec![Command::Insert(0, "asdf".to_string()),
+                               Command::Insert(0, "hi".to_string())]);
     assert!(editor.log_index == 1);
 }
