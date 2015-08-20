@@ -1,6 +1,7 @@
 use buffer::Buffer;
 use command::Command;
 
+#[derive(Copy, Clone)]
 pub enum Mode {
     Normal,
     Insert,
@@ -20,7 +21,7 @@ pub struct Ted {
     log: Vec<Command>,
     log_index: usize, // Current position in the log from undoing/redoing
 
-    dirty: bool,
+    pub dirty: bool,
     running: bool,
 }
 
@@ -39,7 +40,46 @@ impl Ted {
         }
     }
 
+    pub fn from_str(text: &str) -> Ted {
+        Ted {
+            mode: Mode::Normal,
+
+            buffers: vec![Buffer::from_str(text)],
+            
+            log: Vec::new(),
+            log_index: 0,
+
+            dirty: true,
+            running: true,
+        }
+    }
+
     pub fn handle_event(&mut self, e: Event) {
+        match self.mode {
+            Mode::Normal => { self.normal_handle_event(e); },
+            Mode::Insert => { self.insert_handle_event(e); },
+            Mode::Command => { self.command_handle_event(e); },
+        }
+    }
+
+    // Normal mode handle event
+    fn normal_handle_event(&mut self, e: Event) {
+        match e {
+            Event::Backspace => { },
+            Event::Char(c) => { self.running = false; },
+        }
+    }
+
+    // Insert mode handle event
+    fn insert_handle_event(&mut self, e: Event) {
+        match e {
+            Event::Backspace => { },
+            Event::Char(c) => { self.running = false; },
+        }
+    }
+
+    // Command mode handle event
+    fn command_handle_event(&mut self, e: Event) {
         match e {
             Event::Backspace => { },
             Event::Char(c) => { self.running = false; },
@@ -50,6 +90,14 @@ impl Ted {
         self.log.truncate(self.log_index+1);
         self.log.push(command);
         self.log_index = self.log.len()-1;
+    }
+
+    pub fn buffer(&self, index: usize) -> Option<&Buffer> {
+        self.buffers.get(index)
+    }
+    
+    pub fn buffer_mut(&mut self, index: usize) -> Option<&mut Buffer> {
+        self.buffers.get_mut(index)
     }
 
     pub fn running(&self) -> bool {
