@@ -1,6 +1,4 @@
 #![feature(convert)]
-#![feature(drain)]
-#![feature(vec_push_all)]
 
 mod buffer;
 mod command;
