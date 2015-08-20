@@ -7,7 +7,7 @@ use editor::Editor;
 mod buffer;
 mod command;
 mod editor;
-mod view;
+mod ted;
 
 fn main() {
     Editor::new().run();
