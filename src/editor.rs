@@ -1,18 +1,37 @@
 use buffer::Buffer;
 use command::Command;
+use view::{Event, View};
 
 pub struct Editor {
+    view: View,
     buffers: Vec<Buffer>,
     log: Vec<Command>,
     log_index: usize, // Current position in the log from undoing/redoing
+    dirty: bool,
 }
 
 impl Editor {
     pub fn new() -> Editor {
         Editor {
+            view: View::new(),
             buffers: vec![Buffer::new()],
             log: Vec::new(),
             log_index: 0,
+            dirty: true,
+        }
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            if let Some(e) = self.view.poll_event() {
+                match e {
+                    Event::Backspace => { },
+                    Event::Char(c) => { break; },
+                }
+            }
+            if self.dirty {
+                self.view.present();
+            }
         }
     }
 
