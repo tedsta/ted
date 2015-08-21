@@ -1,4 +1,4 @@
-use buffer::Cursor;
+use ted::Cursor;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Operation {

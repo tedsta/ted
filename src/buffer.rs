@@ -1,9 +1,3 @@
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub struct Cursor {
-    pub line: usize,
-    pub column: usize,
-}
-
 #[derive(Clone)]
 pub struct Buffer {
     buf: String,

@@ -178,6 +178,12 @@ impl Ted {
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct Cursor {
+    pub line: usize,
+    pub column: usize,
+}
+
 #[test]
 fn ted_log_empty() {
     let mut ted = Ted::new(0);
