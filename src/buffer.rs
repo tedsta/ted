@@ -61,6 +61,18 @@ impl Buffer {
     pub fn line_count(&self) -> usize {
         self.line_info.len()
     }
+
+    pub fn len(&self) -> usize {
+        self.buf.len()
+    }
+
+    pub fn buffer(&self) -> &String {
+        &self.buf
+    }
+
+    pub fn clear(&mut self) {
+        self.buf.clear();
+    }
 }
 
 fn build_line_info(text: &str) -> Vec<(usize, usize)> {

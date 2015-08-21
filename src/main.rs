@@ -5,8 +5,8 @@ extern crate rustbox;
 use editor::Editor;
 
 mod buffer;
-mod command;
 mod editor;
+mod operation;
 mod ted;
 
 fn main() {

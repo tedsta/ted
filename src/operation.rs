@@ -1,14 +1,14 @@
 use buffer::Cursor;
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum Command {
+pub enum Operation {
     Insert(usize, String),
     Remove(usize, usize, String),
 }
 
-impl Command {
-    pub fn inverse(self) -> Command {
-        use self::Command::*;
+impl Operation {
+    pub fn inverse(self) -> Operation {
+        use self::Operation::*;
 
         match self {
             Insert(index, text) => Remove(index, index+text.len()-1, text),

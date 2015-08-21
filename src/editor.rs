@@ -8,7 +8,7 @@ use rustbox::{
     RustBox
 };
 
-use ted::{Event, Ted};
+use ted::{Event, Mode, Ted};
 
 pub struct Editor {
     ted: Ted,
@@ -56,12 +56,45 @@ impl Editor {
         // Clear dirty flag
         self.ted.dirty = false;
 
+        self.rust_box.clear();
+
+        // Draw main text
         if let Some(text) = self.ted.buffer(0) {
             for i in (self.scroll..cmp::min(text.line_count(), self.height)) {
                 self.rust_box.print(self.left_column, i - self.scroll,
                                     rustbox::RB_BOLD, Color::White, Color::Black,
                                     text.line(i));
             }
+        }
+
+        // Draw command
+        if self.ted.mode() == Mode::Command {
+            if let Some(command) = self.ted.buffer(1) {
+                self.rust_box.print(0, self.height + 1,
+                                    rustbox::RB_BOLD, Color::White, Color::Black, ":");
+                self.rust_box.print(1, self.height + 1,
+                                    rustbox::RB_BOLD, Color::White, Color::Black,
+                                    command.buffer().as_str());
+            }
+        } 
+
+        // Draw editor status 
+        match self.ted.mode() {
+            Mode::Normal => {
+                self.rust_box.print(0, self.height + 2,
+                                    rustbox::RB_BOLD, Color::White, Color::Black,
+                                    "--NORMAL--  ");
+            },
+            Mode::Insert => {
+                self.rust_box.print(0, self.height + 2,
+                                    rustbox::RB_BOLD, Color::White, Color::Black,
+                                    "--INSERT--  ");
+            },
+            Mode::Command => {
+                self.rust_box.print(0, self.height + 2,
+                                    rustbox::RB_BOLD, Color::White, Color::Black,
+                                    "--COMMAND-- ");
+            },
         }
 
         self.rust_box.present();
@@ -74,6 +107,7 @@ impl Editor {
                     match k {
                         Key::Char(c) => { return Some(Event::Char(c)); },
                         Key::Backspace => { return Some(Event::Backspace) },
+                        Key::Enter => { return Some(Event::Enter) },
                         _ => { },
                     }
                 }
