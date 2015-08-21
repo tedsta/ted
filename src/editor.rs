@@ -14,8 +14,6 @@ pub struct Editor {
     ted: Ted,
     rust_box: RustBox,
 
-    scroll: usize,
-    height: usize,
     left_column: usize,
     right_column: usize,
 }
@@ -29,10 +27,8 @@ impl Editor {
             };
 
         Editor {
-            ted: Ted::from_str("hello world!!!!!\n    super duper text\n awwwww yeah mann\n"),
+            ted: Ted::from_str(rust_box.height()-2, "hello world!!!!!\n    super duper text\n awwwww yeah mann\na\nb\nc\nd\ne\nf"),
             rust_box: rust_box,
-            scroll: 0,
-            height: 25,
             left_column: 3,
             right_column: 3,
         }
@@ -60,8 +56,8 @@ impl Editor {
 
         // Draw main text
         if let Some(text) = self.ted.buffer(0) {
-            for i in (self.scroll..cmp::min(text.line_count(), self.height)) {
-                self.rust_box.print(self.left_column, i - self.scroll,
+            for i in (self.ted.scroll..cmp::min(text.line_count(), self.ted.scroll+self.ted.height)) {
+                self.rust_box.print(self.left_column, i - self.ted.scroll,
                                     rustbox::RB_BOLD, Color::White, Color::Black,
                                     text.line(i));
             }
@@ -70,9 +66,9 @@ impl Editor {
         // Draw command
         if self.ted.mode() == Mode::Command {
             if let Some(command) = self.ted.buffer(1) {
-                self.rust_box.print(0, self.height + 1,
+                self.rust_box.print(0, self.ted.height + 1,
                                     rustbox::RB_BOLD, Color::White, Color::Black, ":");
-                self.rust_box.print(1, self.height + 1,
+                self.rust_box.print(1, self.ted.height + 1,
                                     rustbox::RB_BOLD, Color::White, Color::Black,
                                     command.buffer().as_str());
             }
@@ -81,19 +77,19 @@ impl Editor {
         // Draw editor status 
         match self.ted.mode() {
             Mode::Normal => {
-                self.rust_box.print(0, self.height + 2,
-                                    rustbox::RB_BOLD, Color::White, Color::Black,
-                                    "--NORMAL--  ");
+                self.rust_box.print(0, self.ted.height,
+                                    rustbox::RB_BOLD, Color::Red, Color::Black,
+                                    "--NORMAL--");
             },
             Mode::Insert => {
-                self.rust_box.print(0, self.height + 2,
-                                    rustbox::RB_BOLD, Color::White, Color::Black,
-                                    "--INSERT--  ");
+                self.rust_box.print(0, self.ted.height,
+                                    rustbox::RB_BOLD, Color::Red, Color::Black,
+                                    "--INSERT--");
             },
             Mode::Command => {
-                self.rust_box.print(0, self.height + 2,
-                                    rustbox::RB_BOLD, Color::White, Color::Black,
-                                    "--COMMAND-- ");
+                self.rust_box.print(0, self.ted.height,
+                                    rustbox::RB_BOLD, Color::Red, Color::Black,
+                                    "--COMMAND--");
             },
         }
 
@@ -108,6 +104,7 @@ impl Editor {
                         Key::Char(c) => { return Some(Event::Char(c)); },
                         Key::Backspace => { return Some(Event::Backspace) },
                         Key::Enter => { return Some(Event::Enter) },
+                        Key::Esc => { return Some(Event::Esc) },
                         _ => { },
                     }
                 }

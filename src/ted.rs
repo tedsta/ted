@@ -11,11 +11,14 @@ pub enum Mode {
 pub enum Event {
     Backspace,
     Enter,
+    Esc,
     Char(char),
 }
 
 pub struct Ted {
     mode: Mode,
+    pub scroll: usize,
+    pub height: usize,
 
     buffers: Vec<Buffer>,
 
@@ -27,9 +30,11 @@ pub struct Ted {
 }
 
 impl Ted {
-    pub fn new() -> Ted {
+    pub fn new(height: usize) -> Ted {
         Ted {
             mode: Mode::Normal,
+            scroll: 0,
+            height: height,
 
             buffers: vec![Buffer::new(), Buffer::new()],
             
@@ -41,9 +46,11 @@ impl Ted {
         }
     }
 
-    pub fn from_str(text: &str) -> Ted {
+    pub fn from_str(height: usize, text: &str) -> Ted {
         Ted {
             mode: Mode::Normal,
+            scroll: 0,
+            height: height,
 
             buffers: vec![Buffer::from_str(text), Buffer::new()],
             
@@ -71,13 +78,33 @@ impl Ted {
 
     // Normal mode handle event
     fn normal_handle_event(&mut self, e: Event) {
+        use std::cmp;
+        
         match e {
             Event::Backspace => { },
             Event::Char(c) => {
                 match c {
+                    'i' => {
+                        self.mode = Mode::Insert;
+                        self.dirty = true;
+                    }
                     ':' => {
                         self.mode = Mode::Command;
                         self.dirty = true;
+                    },
+                    'h' => { },
+                    'l' => { },
+                    'k' => {
+                        if self.scroll > 0 { 
+                            self.scroll -= 1;
+                            self.dirty = true;
+                        }
+                    },
+                    'j' => {
+                        if self.scroll+self.height < self.buffers[0].line_count() {
+                            self.scroll += 1;
+                            self.dirty = true;
+                        }
                     },
                     _ => { },
                 }
@@ -89,6 +116,10 @@ impl Ted {
     // Insert mode handle event
     fn insert_handle_event(&mut self, e: Event) {
         match e {
+            Event::Esc => {
+                self.mode = Mode::Normal;
+                self.dirty = true;
+            },
             Event::Backspace => { },
             Event::Char(c) => { },
             _ => { },
@@ -98,7 +129,13 @@ impl Ted {
     // Operation mode handle event
     fn command_handle_event(&mut self, e: Event) {
         match e {
-            Event::Backspace => { },
+            Event::Backspace => {
+                if self.buffers[1].len() > 0 {
+                    let end = self.buffers[1].len()-1;
+                    self.buffers[1].remove(end, end);
+                    self.dirty = true;
+                }
+            },
             Event::Char(c) => {
                 let end = self.buffers[1].len();
                 self.buffers[1].insert(end, format!("{}", c).as_str());
@@ -111,6 +148,10 @@ impl Ted {
                 self.mode = Mode::Normal;
                 self.dirty = true;
             },
+            Event::Esc => {
+                self.mode = Mode::Normal;
+                self.dirty = true;
+            }
         }
     }
 
@@ -138,20 +179,20 @@ impl Ted {
 }
 
 #[test]
-fn ted_log_command_empty() {
-    let mut ted = Ted::new();
-    ted.log_command(Operation::Insert(0, "asdf".to_string()));
+fn ted_log_empty() {
+    let mut ted = Ted::new(0);
+    ted.log(Operation::Insert(0, "asdf".to_string()));
 
     assert!(ted.log == vec![Operation::Insert(0, "asdf".to_string())]);
     assert!(ted.log_index == 0);
 }
 
 #[test]
-fn ted_log_command_beginning() {
-    let mut ted = Ted::new();
-    ted.log_command(Operation::Insert(0, "asdf".to_string()));
+fn ted_log_beginning() {
+    let mut ted = Ted::new(0);
+    ted.log(Operation::Insert(0, "asdf".to_string()));
     ted.log_index = 0;
-    ted.log_command(Operation::Insert(0, "hi".to_string()));
+    ted.log(Operation::Insert(0, "hi".to_string()));
 
     assert!(ted.log == vec![Operation::Insert(0, "asdf".to_string()),
                             Operation::Insert(0, "hi".to_string())]);
@@ -159,13 +200,13 @@ fn ted_log_command_beginning() {
 }
 
 #[test]
-fn ted_log_command_middle() {
-    let mut ted = Ted::new();
-    ted.log_command(Operation::Insert(0, "asdf".to_string()));
-    ted.log_command(Operation::Insert(0, "asdf".to_string()));
-    ted.log_command(Operation::Insert(0, "asdf".to_string()));
+fn ted_log_middle() {
+    let mut ted = Ted::new(0);
+    ted.log(Operation::Insert(0, "asdf".to_string()));
+    ted.log(Operation::Insert(0, "asdf".to_string()));
+    ted.log(Operation::Insert(0, "asdf".to_string()));
     ted.log_index = 1;
-    ted.log_command(Operation::Insert(0, "hi".to_string()));
+    ted.log(Operation::Insert(0, "hi".to_string()));
 
     assert!(ted.log == vec![Operation::Insert(0, "asdf".to_string()),
                             Operation::Insert(0, "asdf".to_string()),
@@ -174,10 +215,10 @@ fn ted_log_command_middle() {
 }
 
 #[test]
-fn ted_log_command_end() {
-    let mut ted = Ted::new();
-    ted.log_command(Operation::Insert(0, "asdf".to_string()));
-    ted.log_command(Operation::Insert(0, "hi".to_string()));
+fn ted_log_end() {
+    let mut ted = Ted::new(0);
+    ted.log(Operation::Insert(0, "asdf".to_string()));
+    ted.log(Operation::Insert(0, "hi".to_string()));
 
     assert!(ted.log == vec![Operation::Insert(0, "asdf".to_string()),
                             Operation::Insert(0, "hi".to_string())]);
