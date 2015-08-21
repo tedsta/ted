@@ -62,6 +62,22 @@ impl Ted {
         }
     }
 
+    pub fn from_string(height: usize, text: String) -> Ted {
+        Ted {
+            mode: Mode::Normal,
+            scroll: 0,
+            height: height,
+
+            buffers: vec![Buffer::from_string(text), Buffer::new()],
+            
+            log: Vec::new(),
+            log_index: 0,
+
+            dirty: true,
+            running: true,
+        }
+    }
+
     pub fn handle_event(&mut self, e: Event) {
         match self.mode {
             Mode::Normal => { self.normal_handle_event(e); },

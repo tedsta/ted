@@ -10,5 +10,5 @@ mod operation;
 mod ted;
 
 fn main() {
-    Editor::new().run();
+    Editor::from_file("src/ted.rs").unwrap().run();
 }

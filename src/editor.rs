@@ -1,5 +1,12 @@
 use std::error::Error;
 use std::default::Default;
+use std::fs::File;
+use std::io;
+use std::io::{
+    Read,
+    BufReader,
+};
+use std::path::Path;
 
 use rustbox;
 use rustbox::{
@@ -34,6 +41,26 @@ impl Editor {
         }
     }
 
+    pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Editor> {
+        // Read the file into file_contents
+        let mut file = BufReader::new(try!(File::open(path)));
+        let mut file_contents = String::new();
+        try!(file.read_to_string(&mut file_contents));
+
+        let rust_box =
+            match RustBox::init(Default::default()) {
+                Result::Ok(v) => v,
+                Result::Err(e) => panic!("Failed to create editor's RustBox: {}", e),
+            };
+
+        Ok(Editor {
+            ted: Ted::from_string(rust_box.height()-2, file_contents),
+            rust_box: rust_box,
+            left_column: 3,
+            right_column: 3,
+        })
+    }
+
     pub fn run(&mut self) {
         while self.ted.running() {
             if self.ted.dirty {
@@ -58,7 +85,7 @@ impl Editor {
         if let Some(text) = self.ted.buffer(0) {
             for i in (self.ted.scroll..cmp::min(text.line_count(), self.ted.scroll+self.ted.height)) {
                 self.rust_box.print(self.left_column, i - self.ted.scroll,
-                                    rustbox::RB_BOLD, Color::White, Color::Black,
+                                    rustbox::RB_BOLD, Color::White, Color::Default,
                                     text.line(i));
             }
         }
@@ -67,9 +94,9 @@ impl Editor {
         if self.ted.mode() == Mode::Command {
             if let Some(command) = self.ted.buffer(1) {
                 self.rust_box.print(0, self.ted.height + 1,
-                                    rustbox::RB_BOLD, Color::White, Color::Black, ":");
+                                    rustbox::RB_BOLD, Color::White, Color::Default, ":");
                 self.rust_box.print(1, self.ted.height + 1,
-                                    rustbox::RB_BOLD, Color::White, Color::Black,
+                                    rustbox::RB_BOLD, Color::White, Color::Default,
                                     command.buffer().as_str());
             }
         } 
@@ -78,17 +105,17 @@ impl Editor {
         match self.ted.mode() {
             Mode::Normal => {
                 self.rust_box.print(0, self.ted.height,
-                                    rustbox::RB_BOLD, Color::Red, Color::Black,
+                                    rustbox::RB_BOLD, Color::Red, Color::Default,
                                     "--NORMAL--");
             },
             Mode::Insert => {
                 self.rust_box.print(0, self.ted.height,
-                                    rustbox::RB_BOLD, Color::Red, Color::Black,
+                                    rustbox::RB_BOLD, Color::Red, Color::Default,
                                     "--INSERT--");
             },
             Mode::Command => {
                 self.rust_box.print(0, self.ted.height,
-                                    rustbox::RB_BOLD, Color::Red, Color::Black,
+                                    rustbox::RB_BOLD, Color::Red, Color::Default,
                                     "--COMMAND--");
             },
         }

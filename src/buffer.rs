@@ -20,6 +20,14 @@ impl Buffer {
         }
     }
 
+    pub fn from_string(text: String) -> Buffer {
+        let line_info = build_line_info(text.as_str());
+        Buffer {
+            buf: text,
+            line_info: line_info,
+        }
+    }
+
     pub fn insert(&mut self, buf_index: usize, text: &str) {
         self.buf = self.buf[..buf_index].to_string() + text + &self.buf[buf_index..].to_string();
 
