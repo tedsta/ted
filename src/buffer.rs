@@ -1,7 +1,7 @@
 #[derive(Clone)]
 pub struct Buffer {
     buf: String,
-    line_info: Vec<(usize, usize)>, // [(index, line size)], note '\n' not included in line size
+    line_info: Vec<LineInfo>, // [(index, line size)], note '\n' not included in line size
 }
 
 impl Buffer {
@@ -51,13 +51,14 @@ impl Buffer {
         removed
     }
 
-    pub fn line_info(&self) -> &Vec<(usize, usize)> {
+    /// Read-only access to line_info
+    pub fn line_info(&self) -> &Vec<LineInfo> {
         &self.line_info
     }
 
     pub fn line(&self, index: usize) -> &str {
-        let (ref buf_index, ref length) = self.line_info[index];
-        &self.buf[*buf_index..*buf_index+*length]
+        let LineInfo { buf_index: buf_index, length: length } = self.line_info[index];
+        &self.buf[buf_index..buf_index+length]
     }
 
     pub fn line_count(&self) -> usize {
@@ -77,19 +78,25 @@ impl Buffer {
     }
 }
 
-fn build_line_info(text: &str) -> Vec<(usize, usize)> {
+#[derive(Clone, PartialEq)]
+pub struct LineInfo {
+    pub buf_index: usize,
+    pub length: usize,
+}
+
+fn build_line_info(text: &str) -> Vec<LineInfo> {
     let mut line_info = Vec::new();
     let mut last_index = 0;
     for (i, c) in text.chars().enumerate() {
         if c == '\n' {
             // Note '\n' not included in line_size
-            let line_size = i - last_index;
-            line_info.push((last_index, line_size));
+            let length = i - last_index;
+            line_info.push(LineInfo { buf_index: last_index, length: length });
             last_index = i+1;
         }
     }
-    let line_size = text.len() - last_index;
-    line_info.push((last_index, line_size));
+    let length = text.len() - last_index;
+    line_info.push(LineInfo { buf_index: last_index, length: length });
     line_info
 }
 
@@ -99,7 +106,8 @@ fn buffer_insert_no_lines() {
     buf.insert(5, ", ");
 
     assert!(buf.buf.as_str() == "hello, world!\nbye");
-    assert!(buf.line_info == vec![(0, 13), (14, 3)]);
+    assert!(buf.line_info == vec![LineInfo { buf_index: 0, length: 13 },
+                                  LineInfo { buf_index: 14, length: 3 }]);
 }
 
 #[test]
@@ -108,7 +116,9 @@ fn buffer_insert_two_lines() {
     buf.insert(5, "s\nworld");
 
     assert!(buf.buf.as_str() == "hellos\nworld\nbye");
-    assert!(buf.line_info == vec![(0, 6), (7, 5), (13, 3)]);
+    assert!(buf.line_info == vec![LineInfo { buf_index: 0, length: 6 },
+                                  LineInfo { buf_index: 7, length: 5 },
+                                  LineInfo { buf_index: 13, length: 3 }]);
 }
 
 #[test]
@@ -118,7 +128,8 @@ fn buffer_remove_same_line() {
 
     assert!(buf.buf.as_str() == "helloworld!\nbye");
     assert!(removed.as_str() == ", ");
-    assert!(buf.line_info == vec![(0, 11), (12, 3)]);
+    assert!(buf.line_info == vec![LineInfo { buf_index: 0, length: 11 },
+                                  LineInfo { buf_index: 12, length: 3 }]);
 }
 
 #[test]
@@ -128,7 +139,7 @@ fn buffer_remove_two_lines() {
 
     assert!(buf.buf.as_str() == "helloe");
     assert!(removed.as_str() == ", world!\nby");
-    assert!(buf.line_info == vec![(0, 6)]);
+    assert!(buf.line_info == vec![LineInfo { buf_index: 0, length: 6 }]);
 }
 
 #[test]
@@ -138,26 +149,27 @@ fn buffer_remove_multi_line() {
 
     assert!(buf.buf.as_str() == "hellola");
     assert!(removed.as_str() == ", world!\nbye\nho");
-    assert!(buf.line_info == vec![(0, 7)]);
+    assert!(buf.line_info == vec![LineInfo { buf_index: 0, length: 7 }]);
 }
 
 #[test]
 fn build_line_info_empty() {
     let line_info = build_line_info("");
 
-    assert!(line_info == vec![(0, 0)]);
+    assert!(line_info == vec![LineInfo { buf_index: 0, length: 0 }]);
 }
 
 #[test]
 fn build_line_info_one() {
     let line_info = build_line_info("hello");
 
-    assert!(line_info == vec![(0, 5)]);
+    assert!(line_info == vec![LineInfo { buf_index: 0, length: 5 }]);
 }
 
 #[test]
 fn build_line_info_two() {
     let line_info = build_line_info("hello\nfoo");
 
-    assert!(line_info == vec![(0, 5), (6, 3)]);
+    assert!(line_info == vec![LineInfo { buf_index: 0, length: 5 },
+                              LineInfo { buf_index: 6, length: 3 }]);
 }

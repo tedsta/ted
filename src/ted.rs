@@ -19,6 +19,7 @@ pub struct Ted {
     mode: Mode,
     pub scroll: usize,
     pub height: usize,
+    cursor: Cursor,
 
     buffers: Vec<Buffer>,
 
@@ -35,6 +36,7 @@ impl Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
+            cursor: Cursor { line: 0, column: 0 },
 
             buffers: vec![Buffer::new(), Buffer::new()],
             
@@ -51,6 +53,7 @@ impl Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
+            cursor: Cursor { line: 0, column: 0 },
 
             buffers: vec![Buffer::from_str(text), Buffer::new()],
             
@@ -67,6 +70,7 @@ impl Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
+            cursor: Cursor { line: 0, column: 0 },
 
             buffers: vec![Buffer::from_string(text), Buffer::new()],
             
@@ -108,8 +112,10 @@ impl Ted {
                         self.mode = Mode::Command;
                         self.dirty = true;
                     },
-                    'h' => { },
-                    'l' => { },
+                    'h' => {
+                    },
+                    'l' => {
+                    },
                     'k' => {
                         if self.scroll > 0 { 
                             self.scroll -= 1;
@@ -191,6 +197,15 @@ impl Ted {
 
     pub fn running(&self) -> bool {
         self.running
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Cursor movement
+
+    fn cursor_up(&mut self) {
+        if self.cursor.line > 0 {
+            self.cursor.line -= 1;
+        }
     }
 }
 

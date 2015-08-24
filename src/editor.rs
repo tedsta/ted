@@ -34,7 +34,7 @@ impl Editor {
             };
 
         Editor {
-            ted: Ted::from_str(rust_box.height()-2, "hello world!!!!!\n    super duper text\n awwwww yeah mann\na\nb\nc\nd\ne\nf"),
+            ted: Ted::new(rust_box.height()-2),
             rust_box: rust_box,
             left_column: 3,
             right_column: 3,
