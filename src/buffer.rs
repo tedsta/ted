@@ -78,7 +78,7 @@ impl Buffer {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct LineInfo {
     pub buf_index: usize,
     pub length: usize,

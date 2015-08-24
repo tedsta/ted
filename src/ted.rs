@@ -19,7 +19,8 @@ pub struct Ted {
     mode: Mode,
     pub scroll: usize,
     pub height: usize,
-    cursor: Cursor,
+    pub cursor: Cursor,
+    cursor_index: usize,
 
     buffers: Vec<Buffer>,
 
@@ -37,6 +38,7 @@ impl Ted {
             scroll: 0,
             height: height,
             cursor: Cursor { line: 0, column: 0 },
+            cursor_index: 0,
 
             buffers: vec![Buffer::new(), Buffer::new()],
             
@@ -54,6 +56,7 @@ impl Ted {
             scroll: 0,
             height: height,
             cursor: Cursor { line: 0, column: 0 },
+            cursor_index: 0,
 
             buffers: vec![Buffer::from_str(text), Buffer::new()],
             
@@ -71,6 +74,7 @@ impl Ted {
             scroll: 0,
             height: height,
             cursor: Cursor { line: 0, column: 0 },
+            cursor_index: 0,
 
             buffers: vec![Buffer::from_string(text), Buffer::new()],
             
@@ -117,16 +121,12 @@ impl Ted {
                     'l' => {
                     },
                     'k' => {
-                        if self.scroll > 0 { 
-                            self.scroll -= 1;
-                            self.dirty = true;
-                        }
+                        self.cursor_up();
+                        self.dirty = true;
                     },
                     'j' => {
-                        if self.scroll+self.height < self.buffers[0].line_count() {
-                            self.scroll += 1;
-                            self.dirty = true;
-                        }
+                        self.cursor_down();
+                        self.dirty = true;
                     },
                     _ => { },
                 }
@@ -203,8 +203,16 @@ impl Ted {
     // Cursor movement
 
     fn cursor_up(&mut self) {
-        if self.cursor.line > 0 {
-            self.cursor.line -= 1;
+        self.cursor_index = self.cursor.move_up(&self.buffers[0]);
+        if self.scroll > self.cursor.line {
+            self.scroll = self.cursor.line;
+        }
+    }
+
+    fn cursor_down(&mut self) {
+        self.cursor_index = self.cursor.move_down(&self.buffers[0]);
+        if self.scroll+self.height <= self.cursor.line {
+            self.scroll = self.cursor.line - (self.height-1);
         }
     }
 }
@@ -213,6 +221,35 @@ impl Ted {
 pub struct Cursor {
     pub line: usize,
     pub column: usize,
+}
+
+impl Cursor {
+    /// Returns the cursor's index within the specified buffer
+    pub fn index_in(&self, buffer: &Buffer) -> usize {
+        use std::cmp;
+
+        let line_info = buffer.line_info()[self.line];
+        let line_last_index = if line_info.length > 0 { line_info.length-1 } else { 0 };
+        line_info.buf_index + cmp::min(line_last_index, self.column)
+    }
+
+    /// Moves the cursor up and returns the new index within the buffer
+    pub fn move_up(&mut self, buffer: &Buffer) -> usize {
+        if self.line > 0 {
+            self.line -= 1;
+        }
+
+        self.index_in(buffer)
+    }
+    
+    /// Moves the cursor down and returns the new index within the buffer
+    pub fn move_down(&mut self, buffer: &Buffer) -> usize {
+        if self.line < buffer.line_count()-1 {
+            self.line += 1;
+        }
+
+        self.index_in(buffer)
+    }
 }
 
 #[test]

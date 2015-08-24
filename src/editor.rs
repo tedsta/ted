@@ -120,6 +120,10 @@ impl Editor {
             },
         }
 
+        // Draw the cursor
+        self.rust_box.set_cursor(self.ted.cursor.column as isize,
+                                 (self.ted.cursor.line - self.ted.scroll) as isize);
+
         self.rust_box.present();
     }
 
