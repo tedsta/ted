@@ -20,7 +20,6 @@ pub struct Ted {
     pub scroll: usize,
     pub height: usize,
     pub cursor: Cursor,
-    cursor_index: usize,
 
     buffers: Vec<Buffer>,
 
@@ -37,8 +36,7 @@ impl Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
-            cursor: Cursor { line: 0, column: 0 },
-            cursor_index: 0,
+            cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
             buffers: vec![Buffer::new(), Buffer::new()],
             
@@ -55,8 +53,7 @@ impl Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
-            cursor: Cursor { line: 0, column: 0 },
-            cursor_index: 0,
+            cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
             buffers: vec![Buffer::from_str(text), Buffer::new()],
             
@@ -73,8 +70,7 @@ impl Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
-            cursor: Cursor { line: 0, column: 0 },
-            cursor_index: 0,
+            cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
             buffers: vec![Buffer::from_string(text), Buffer::new()],
             
@@ -117,16 +113,16 @@ impl Ted {
                         self.dirty = true;
                     },
                     'h' => {
+                        self.cursor_left();
                     },
                     'l' => {
+                        self.cursor_right();
                     },
                     'k' => {
                         self.cursor_up();
-                        self.dirty = true;
                     },
                     'j' => {
                         self.cursor_down();
-                        self.dirty = true;
                     },
                     _ => { },
                 }
@@ -203,17 +199,35 @@ impl Ted {
     // Cursor movement
 
     fn cursor_up(&mut self) {
-        self.cursor_index = self.cursor.move_up(&self.buffers[0]);
+        self.cursor.move_up(&self.buffers[0]);
         if self.scroll > self.cursor.line {
             self.scroll = self.cursor.line;
         }
+        self.dirty = true;
     }
 
     fn cursor_down(&mut self) {
-        self.cursor_index = self.cursor.move_down(&self.buffers[0]);
+        self.cursor.move_down(&self.buffers[0]);
         if self.scroll+self.height <= self.cursor.line {
             self.scroll = self.cursor.line - (self.height-1);
         }
+        self.dirty = true;
+    }
+
+    fn cursor_left(&mut self) {
+        self.cursor.move_left(&self.buffers[0]);
+        if self.scroll > self.cursor.line {
+            self.scroll = self.cursor.line;
+        }
+        self.dirty = true;
+    }
+
+    fn cursor_right(&mut self) {
+        self.cursor.move_right(&self.buffers[0]);
+        if self.scroll+self.height <= self.cursor.line {
+            self.scroll = self.cursor.line - (self.height-1);
+        }
+        self.dirty = true;
     }
 }
 
@@ -221,34 +235,85 @@ impl Ted {
 pub struct Cursor {
     pub line: usize,
     pub column: usize,
+    pub buf_index: usize,
 }
 
 impl Cursor {
-    /// Returns the cursor's index within the specified buffer
-    pub fn index_in(&self, buffer: &Buffer) -> usize {
-        use std::cmp;
-
-        let line_info = buffer.line_info()[self.line];
-        let line_last_index = if line_info.length > 0 { line_info.length-1 } else { 0 };
-        line_info.buf_index + cmp::min(line_last_index, self.column)
-    }
-
     /// Moves the cursor up and returns the new index within the buffer
-    pub fn move_up(&mut self, buffer: &Buffer) -> usize {
+    pub fn move_up(&mut self, buffer: &Buffer) {
         if self.line > 0 {
             self.line -= 1;
         }
 
-        self.index_in(buffer)
+        self.calculate_index(buffer);
     }
     
     /// Moves the cursor down and returns the new index within the buffer
-    pub fn move_down(&mut self, buffer: &Buffer) -> usize {
+    pub fn move_down(&mut self, buffer: &Buffer) {
         if self.line < buffer.line_count()-1 {
             self.line += 1;
         }
 
-        self.index_in(buffer)
+        self.calculate_index(buffer);
+    }
+
+    /// Moves the cursor left and returns the new index within the buffer
+    pub fn move_left(&mut self, buffer: &Buffer) {
+        if self.column > 0 {
+            // Cursor can move to the left, need to determine if it's past the current line, though.
+            if self.column < buffer.line_info()[self.line].length {
+                self.column -= 1;
+            } else if buffer.line_info()[self.line].length >= 2 {
+                self.column = buffer.line_info()[self.line].length - 2;
+            }
+        } else if self.line > 0 {
+            // Cursor is at the beginning of the line, move to previous line
+            self.line -= 1;
+            if buffer.line_info()[self.line].length > 0 {
+                self.column = buffer.line_info()[self.line].length - 1;
+            } else {
+                self.column = 0;
+            }
+        }
+
+        self.calculate_index(buffer);
+    }
+
+    /// Moves the cursor right and returns the new index within the buffer
+    pub fn move_right(&mut self, buffer: &Buffer) {
+        if buffer.line_info()[self.line].length > 0 &&
+           self.column < buffer.line_info()[self.line].length - 1 {
+            // Cursor can move to the right
+            self.column += 1;
+        } else if self.line < buffer.line_count() - 1 {
+            // Cursor can't move right, move to next line
+            self.line += 1;
+            self.column = 0;
+        }
+
+        self.calculate_index(buffer);
+    }
+
+    /// Calculates the position to display the cursor at
+    pub fn get_display_xy(&self, buffer: &Buffer) -> (usize, usize) {
+        use std::cmp;
+
+        let line_info = buffer.line_info()[self.line];
+
+        (self.buf_index - line_info.buf_index , self.line)
+    }
+
+    /// Calculates the cursor's index within the specified buffer
+    fn calculate_index(&mut self, buffer: &Buffer) {
+        use std::cmp;
+
+        let line_info = buffer.line_info()[self.line];
+        self.buf_index =
+            if line_info.length > 0 {
+                line_info.buf_index + cmp::min(line_info.length-1, self.column)
+            } else {
+                line_info.buf_index
+            };
     }
 }
 
