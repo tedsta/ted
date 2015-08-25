@@ -5,6 +5,7 @@ extern crate rustbox;
 use editor::Editor;
 
 mod buffer;
+mod cursor;
 mod editor;
 mod operation;
 mod ted;
