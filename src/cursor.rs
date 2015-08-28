@@ -34,6 +34,14 @@ impl Cursor {
                 self.column -= 1;
             } else if buffer.line_info()[self.line].length >= 2 {
                 self.column = buffer.line_info()[self.line].length - 2;
+            } else if self.line > 0 {
+                // column = 0 or 1, so cursor is at the beginning of the line, move to previous line
+                self.line -= 1;
+                if buffer.line_info()[self.line].length > 0 {
+                    self.column = buffer.line_info()[self.line].length - 1;
+                } else {
+                    self.column = 0;
+                }
             }
         } else if self.line > 0 {
             // Cursor is at the beginning of the line, move to previous line
