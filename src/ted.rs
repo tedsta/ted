@@ -139,9 +139,40 @@ impl Ted {
                 self.mode = Mode::Normal;
                 self.dirty = true;
             },
-            Event::Backspace => { },
-            Event::Char(c) => { },
-            _ => { },
+            Event::Backspace => {
+                if self.cursor.buf_index > 0 {
+                    self.cursor.buf_index -= 1;
+                    if self.cursor.column == 0 {
+                        // Handle special newline case
+                        self.cursor.line -= 1;
+                        self.cursor.column =
+                            self.buffers[0].line_info()[self.cursor.line].last_column();
+                    } else {
+                        self.cursor.column -= 1;
+                    }
+
+                    let index = self.cursor.buf_index;
+
+                    self.remove_char(index);
+                    
+                    self.dirty = true;
+                }
+            },
+            Event::Enter => {
+                let index = self.cursor.buf_index;
+                self.insert_char(index, '\n');
+                self.cursor.column = 0;
+                self.cursor.line += 1;
+                self.cursor.buf_index += 1;
+                self.dirty = true;
+            },
+            Event::Char(c) => {
+                let index = self.cursor.buf_index;
+                self.insert_char(index, c);
+                self.cursor.column += 1;
+                self.cursor.buf_index += 1;
+                self.dirty = true;
+            },
         }
     }
 
@@ -194,6 +225,38 @@ impl Ted {
 
     pub fn running(&self) -> bool {
         self.running
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Operation stuff
+
+    pub fn do_operation(&mut self, operation: Operation) {
+        match operation {
+            Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index, c); },
+            Operation::Insert(index, text) => { self.buffers[0].insert(index, text.as_str()); },
+            Operation::RemoveChar(index, _) => { self.buffers[0].remove(index, index); },
+            Operation::Remove(start, end, _) => { self.buffers[0].remove(end, end); },
+        }
+    }
+
+    pub fn insert_char(&mut self, index: usize, c: char) -> Operation {
+        self.buffers[0].insert_char(index, c);
+        Operation::InsertChar(index, c)
+    }
+
+    pub fn insert(&mut self, index: usize, text: String) -> Operation {
+        self.buffers[0].insert(index, text.as_str());
+        Operation::Insert(index, text)
+    }
+
+    pub fn remove_char(&mut self, index: usize) -> Operation {
+        let c = self.buffers[0].remove_char(index);
+        Operation::RemoveChar(index, c)
+    }
+
+    pub fn remove(&mut self, from: usize, to: usize) -> Operation {
+        let text = self.buffers[0].remove(from, to);
+        Operation::Remove(from, to, text)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

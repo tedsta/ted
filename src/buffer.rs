@@ -35,6 +35,13 @@ impl Buffer {
         self.line_info = build_line_info(self.buf.as_str());
     }
 
+    pub fn insert_char(&mut self, buf_index: usize, c: char) {
+        self.buf.insert(buf_index, c);
+
+        // TODO: optimize, we don't have to rebuild whole line_info array
+        self.line_info = build_line_info(self.buf.as_str());
+    }
+
     /// Remove all characters between the from and to cursors inclusively
     /// Order of from and to cursors does not matter
     pub fn remove(&mut self, from: usize, to: usize) -> String {
@@ -49,6 +56,16 @@ impl Buffer {
         self.line_info = build_line_info(self.buf.as_str());
 
         removed
+    }
+
+    /// Remove a single character from the buffer and return it
+    pub fn remove_char(&mut self, index: usize) -> char {
+        let c = self.buf.remove(index);
+
+        // TODO: optimize, we don't have to rebuild whole line_info array
+        self.line_info = build_line_info(self.buf.as_str());
+
+        c
     }
 
     /// Read-only access to line_info
@@ -82,6 +99,16 @@ impl Buffer {
 pub struct LineInfo {
     pub buf_index: usize,
     pub length: usize,
+}
+
+impl LineInfo {
+    pub fn last_column(&self) -> usize {
+        if self.length > 0 {
+            self.length - 1
+        } else {
+            0
+        }
+    }
 }
 
 fn build_line_info(text: &str) -> Vec<LineInfo> {
