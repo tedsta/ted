@@ -291,13 +291,13 @@ impl Server {
                                                     .clone_from(slot_in_t);
                                                 slot_in_t.send(SlotInMsg::Joined(client_id));
                                             } else {
-                                                println!("WARNING: Non-owning slot can't transfer client {}", client_id);
+                                                println!("WARNING: Non-owning slot {} tried to transfer client {}", slot_id, client_id);
                                             }
                                         } else {
-                                            println!("WARNING: Can't transfer non-existant client {}", client_id);
+                                            println!("WARNING: Slot {} tried to transfer non-existant client {}", slot_id, client_id);
                                         }
                                     },
-                                    None => panic!("Failed to transfer client {} to non-existant slot {}", client_id, slot_id)
+                                    None => panic!("WARNING: Failed to transfer client {} to non-existant slot {}", client_id, slot_id)
                                 }
                             },
                         }
