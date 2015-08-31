@@ -82,3 +82,27 @@ fn do_before_removed_same() {
 
     assert!(before.do_before(after) == None);
 }
+
+#[test]
+fn do_before_removed_touch_left() {
+    let before = Remove(5, 10, "asdfghjklz".to_string());
+    let after = Remove(1, 7, "hellos".to_string());
+
+    assert!(before.do_before(after) == None);
+}
+
+#[test]
+fn do_before_removed_touch_right() {
+    let before = Remove(0, 10, "asdfghjklz".to_string());
+    let after = Remove(5, 15, "hellosderphello".to_string());
+
+    assert!(before.do_before(after) == None);
+}
+
+#[test]
+fn do_before_removed_contained() {
+    let before = Remove(0, 10, "asdfghjklz".to_string());
+    let after = Remove(1, 9, "hellosir".to_string());
+
+    assert!(before.do_before(after) == None);
+}
