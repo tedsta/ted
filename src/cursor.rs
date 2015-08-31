@@ -73,8 +73,6 @@ impl Cursor {
 
     /// Calculates the position to display the cursor at
     pub fn get_display_xy(&self, buffer: &Buffer) -> (usize, usize) {
-        use std::cmp;
-
         let line_info = buffer.line_info()[self.line];
 
         (self.buf_index - line_info.buf_index , self.line)

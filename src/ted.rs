@@ -99,8 +99,6 @@ impl Ted {
 
     // Normal mode handle event
     fn normal_handle_event(&mut self, e: Event) {
-        use std::cmp;
-        
         match e {
             Event::Backspace => { },
             Event::Char(c) => {
@@ -238,7 +236,7 @@ impl Ted {
             Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index, c); },
             Operation::Insert(index, text) => { self.buffers[0].insert(index, text.as_str()); },
             Operation::RemoveChar(index, _) => { self.buffers[0].remove(index, index); },
-            Operation::Remove(start, end, _) => { self.buffers[0].remove(end, end); },
+            Operation::Remove(start, end, _) => { self.buffers[0].remove(start, end); },
         }
     }
 

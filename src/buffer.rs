@@ -74,7 +74,7 @@ impl Buffer {
     }
 
     pub fn line(&self, index: usize) -> &str {
-        let LineInfo { buf_index: buf_index, length: length } = self.line_info[index];
+        let LineInfo { buf_index, length } = self.line_info[index];
         &self.buf[buf_index..buf_index+length]
     }
 
