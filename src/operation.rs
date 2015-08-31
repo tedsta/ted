@@ -73,7 +73,7 @@ impl Operation {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Dear got the unit tests :( don't wanna write
+// Tests
 
 #[test]
 fn do_before_removed_same() {
@@ -105,4 +105,20 @@ fn do_before_removed_contained() {
     let after = Remove(1, 9, "hellosir".to_string());
 
     assert!(before.do_before(after) == None);
+}
+
+#[test]
+fn insert_char_do_before_insert_char() {
+    let before = InsertChar(0, 'a');
+    let after = InsertChar(1, 'a');
+
+    assert!(before.do_before(after) == Some(InsertChar(2, 'a')));
+}
+
+#[test]
+fn insert_char_do_before_insert_char_no_effect() {
+    let before = InsertChar(4, 'a');
+    let after = InsertChar(2, 'a');
+
+    assert!(before.do_before(after) == Some(InsertChar(2, 'a')));
 }
