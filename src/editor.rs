@@ -105,7 +105,7 @@ impl Editor {
         match self.ted.mode() {
             Mode::Normal => {
                 self.rust_box.print(0, self.ted.height,
-                                    rustbox::RB_BOLD, Color::Red, Color::Default,
+                                    rustbox::RB_BOLD, Color::Blue, Color::Default,
                                     "--NORMAL--");
             },
             Mode::Insert => {
@@ -115,7 +115,7 @@ impl Editor {
             },
             Mode::Command => {
                 self.rust_box.print(0, self.ted.height,
-                                    rustbox::RB_BOLD, Color::Red, Color::Default,
+                                    rustbox::RB_BOLD, Color::Green, Color::Default,
                                     "--COMMAND--");
             },
         }

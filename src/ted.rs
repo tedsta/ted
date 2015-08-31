@@ -146,21 +146,23 @@ impl Ted {
                         // Handle special newline case
                         self.cursor.line -= 1;
                         self.cursor.column =
-                            self.buffers[0].line_info()[self.cursor.line].last_column();
+                            self.buffers[0].line_info()[self.cursor.line].length;
                     } else {
                         self.cursor.column -= 1;
                     }
 
                     let index = self.cursor.buf_index;
 
-                    self.remove_char(index);
+                    let op = self.remove_char(index);
+                    self.log(op);
                     
                     self.dirty = true;
                 }
             },
             Event::Enter => {
                 let index = self.cursor.buf_index;
-                self.insert_char(index, '\n');
+                let op = self.insert_char(index, '\n');
+                self.log(op);
                 self.cursor.column = 0;
                 self.cursor.line += 1;
                 self.cursor.buf_index += 1;
@@ -168,7 +170,8 @@ impl Ted {
             },
             Event::Char(c) => {
                 let index = self.cursor.buf_index;
-                self.insert_char(index, c);
+                let op = self.insert_char(index, c);
+                self.log(op);
                 self.cursor.column += 1;
                 self.cursor.buf_index += 1;
                 self.dirty = true;
