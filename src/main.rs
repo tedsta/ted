@@ -20,7 +20,7 @@ mod ted_server;
 fn main() {
     Editor::from_file("src/ted.rs").unwrap().run();
 
-    let mut server = net::Server::new();
+    /*let mut server = net::Server::new();
     let slot = server.create_slot(); // Create default slot
     let mut ted_server = TedServer::new(slot);
 
@@ -30,5 +30,5 @@ fn main() {
 
     Builder::new().name("ted_server".to_string()).spawn(move || {
         ted_server.run();
-    }).unwrap();
+    }).unwrap();*/
 }
