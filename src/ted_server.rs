@@ -6,12 +6,12 @@ use ted::Ted;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request {
-    Op(u16, Operation),
+    Op(u16, Operation), // Op(op_id, op)
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Response {
-    Op(u16, bool),
+    Op(u16, bool), // Op(op_id, success?)
 }
 
 pub struct TedServer {
