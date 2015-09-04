@@ -3,36 +3,36 @@ use self::Operation::*;
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable)]
 pub enum Operation {
-    InsertChar(usize, char),
-    Insert(usize, String),
-    RemoveChar(usize, char),
-    Remove(usize, usize, String),
+    InsertChar(u64, char),
+    Insert(u64, String),
+    RemoveChar(u64, char),
+    Remove(u64, u64, String),
 }
 
 impl Operation {
     pub fn inverse(self) -> Operation {
         match self {
             InsertChar(index, c) => RemoveChar(index, c),
-            Insert(index, text) => Remove(index, index+text.len()-1, text),
+            Insert(index, text) => Remove(index, index+((text.len()-1) as u64), text),
             RemoveChar(index, c) => InsertChar(index, c),
             Remove(start, _, text) => Insert(start, text),
         }
     }
 
     pub fn do_before(&self, mut op: Operation) -> Option<Operation> {
-        let (op_start, op_end, bias): (usize, usize, isize) =
+        let (op_start, op_end, bias): (u64, u64, i64) =
             match *self {
                 InsertChar(index, _) => {
                     (index, index, 1)
                 },
                 Insert(index, ref text) => {
-                    (index, index + text.len(), text.len() as isize)
+                    (index, index + (text.len() as u64), text.len() as i64)
                 },
                 RemoveChar(index, _) => {
                     (index, index, -1)
                 },
                 Remove(start, end, ref text) => {
-                    (start, end, -(text.len() as isize))
+                    (start, end, -(text.len() as i64))
                 },
             };
 
@@ -41,29 +41,29 @@ impl Operation {
                 if *index >= op_start && *index <= op_end && bias < 0 {
                     *index = op_start;
                 } else if *index > op_start {
-                    *index = ((*index as isize) + bias) as usize;
+                    *index = ((*index as i64) + bias) as u64;
                 }
             },
             Insert(ref mut index, _) => {
                 if *index >= op_start && *index <= op_end && bias < 0 {
                     *index = op_start;
                 } else if *index > op_start {
-                    *index = ((*index as isize) + bias) as usize;
+                    *index = ((*index as i64) + bias) as u64;
                 }
             },
             RemoveChar(ref mut index, _) => {
                 if *index >= op_start && *index <= op_end && bias < 0 {
                     return None;
                 } else if *index > op_start {
-                    *index = ((*index as isize) + bias) as usize;
+                    *index = ((*index as i64) + bias) as u64;
                 }
             },
             Remove(ref mut start, ref mut end, _) => {
                 if *end >= op_start && *start <= op_end && bias < 0 {
                     return None;
                 } else if *start > op_start {
-                    *start = ((*start as isize) + bias) as usize;
-                    *end = ((*end as isize) + bias) as usize;
+                    *start = ((*start as i64) + bias) as u64;
+                    *end = ((*end as i64) + bias) as u64;
                 }
             },
         }

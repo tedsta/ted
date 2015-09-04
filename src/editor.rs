@@ -34,7 +34,7 @@ impl Editor {
             };
 
         Editor {
-            ted: Ted::new(rust_box.height()-2),
+            ted: Ted::new((rust_box.height()-2) as u64),
             rust_box: rust_box,
             left_column: 3,
             right_column: 3,
@@ -54,7 +54,7 @@ impl Editor {
             };
 
         Ok(Editor {
-            ted: Ted::from_string(rust_box.height()-2, file_contents),
+            ted: Ted::from_string((rust_box.height()-2) as u64, file_contents),
             rust_box: rust_box,
             left_column: 3,
             right_column: 3,
@@ -83,19 +83,19 @@ impl Editor {
 
         // Draw main text
         if let Some(text) = self.ted.buffer(0) {
-            for i in (self.ted.scroll..cmp::min(text.line_count(), self.ted.scroll+self.ted.height)) {
-                self.rust_box.print(self.left_column, i - self.ted.scroll,
+            for i in (self.ted.scroll..cmp::min(text.line_count() as u64, self.ted.scroll+self.ted.height)) {
+                self.rust_box.print(self.left_column, (i - self.ted.scroll) as usize,
                                     rustbox::RB_BOLD, Color::White, Color::Default,
-                                    text.line(i));
+                                    text.line(i as usize));
             }
         }
 
         // Draw command
         if self.ted.mode() == Mode::Command {
             if let Some(command) = self.ted.buffer(1) {
-                self.rust_box.print(0, self.ted.height + 1,
+                self.rust_box.print(0, (self.ted.height + 1) as usize,
                                     rustbox::RB_BOLD, Color::White, Color::Default, ":");
-                self.rust_box.print(1, self.ted.height + 1,
+                self.rust_box.print(1, (self.ted.height + 1) as usize,
                                     rustbox::RB_BOLD, Color::White, Color::Default,
                                     command.buffer().as_str());
             }
@@ -104,17 +104,17 @@ impl Editor {
         // Draw editor status 
         match self.ted.mode() {
             Mode::Normal => {
-                self.rust_box.print(0, self.ted.height,
+                self.rust_box.print(0, self.ted.height as usize,
                                     rustbox::RB_BOLD, Color::Blue, Color::Default,
                                     "--NORMAL--");
             },
             Mode::Insert => {
-                self.rust_box.print(0, self.ted.height,
+                self.rust_box.print(0, self.ted.height as usize,
                                     rustbox::RB_BOLD, Color::Red, Color::Default,
                                     "--INSERT--");
             },
             Mode::Command => {
-                self.rust_box.print(0, self.ted.height,
+                self.rust_box.print(0, self.ted.height as usize,
                                     rustbox::RB_BOLD, Color::Green, Color::Default,
                                     "--COMMAND--");
             },
@@ -122,7 +122,7 @@ impl Editor {
 
         // Draw the cursor
         let (cursor_x, cursor_y) = self.ted.cursor.get_display_xy(self.ted.buffer(0).unwrap());
-        self.rust_box.set_cursor((cursor_x + self.left_column) as isize,
+        self.rust_box.set_cursor((cursor_x as usize + self.left_column) as isize,
                                  (cursor_y - self.ted.scroll) as isize);
 
         self.rust_box.present();

@@ -15,6 +15,7 @@ mod editor;
 mod net;
 mod operation;
 mod ted;
+mod ted_client;
 mod ted_server;
 
 fn main() {

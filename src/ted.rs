@@ -18,8 +18,8 @@ pub enum Event {
 
 pub struct Ted {
     mode: Mode,
-    pub scroll: usize,
-    pub height: usize,
+    pub scroll: u64,
+    pub height: u64,
     pub cursor: Cursor,
 
     buffers: Vec<Buffer>,
@@ -32,7 +32,7 @@ pub struct Ted {
 }
 
 impl Ted {
-    pub fn new(height: usize) -> Ted {
+    pub fn new(height: u64) -> Ted {
         Ted {
             mode: Mode::Normal,
             scroll: 0,
@@ -49,7 +49,7 @@ impl Ted {
         }
     }
 
-    pub fn from_str(height: usize, text: &str) -> Ted {
+    pub fn from_str(height: u64, text: &str) -> Ted {
         Ted {
             mode: Mode::Normal,
             scroll: 0,
@@ -66,7 +66,7 @@ impl Ted {
         }
     }
 
-    pub fn from_string(height: usize, text: String) -> Ted {
+    pub fn from_string(height: u64, text: String) -> Ted {
         Ted {
             mode: Mode::Normal,
             scroll: 0,
@@ -144,9 +144,9 @@ impl Ted {
                         // Handle special newline case
                         self.cursor.line -= 1;
                         self.cursor.column =
-                            self.buffers[0].line_info()[self.cursor.line].length;
+                            self.buffers[0].line_info()[self.cursor.line as usize].length as u64;
                     } else {
-                        self.cursor.column -= 1;
+                        self.cursor.move_left(&self.buffers[0]);
                     }
 
                     let index = self.cursor.buf_index;
@@ -233,30 +233,30 @@ impl Ted {
 
     pub fn do_operation(&mut self, operation: &Operation) {
         match *operation {
-            Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index, c); },
-            Operation::Insert(index, ref text) => { self.buffers[0].insert(index, text.as_str()); },
-            Operation::RemoveChar(index, _) => { self.buffers[0].remove(index, index); },
-            Operation::Remove(start, end, _) => { self.buffers[0].remove(start, end); },
+            Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index as usize, c); },
+            Operation::Insert(index, ref text) => { self.buffers[0].insert(index as usize, text.as_str()); },
+            Operation::RemoveChar(index, _) => { self.buffers[0].remove_char(index as usize); },
+            Operation::Remove(start, end, _) => { self.buffers[0].remove(start as usize, end as usize); },
         }
     }
 
-    pub fn insert_char(&mut self, index: usize, c: char) -> Operation {
-        self.buffers[0].insert_char(index, c);
+    pub fn insert_char(&mut self, index: u64, c: char) -> Operation {
+        self.buffers[0].insert_char(index as usize, c);
         Operation::InsertChar(index, c)
     }
 
-    pub fn insert(&mut self, index: usize, text: String) -> Operation {
-        self.buffers[0].insert(index, text.as_str());
+    pub fn insert(&mut self, index: u64, text: String) -> Operation {
+        self.buffers[0].insert(index as usize, text.as_str());
         Operation::Insert(index, text)
     }
 
-    pub fn remove_char(&mut self, index: usize) -> Operation {
-        let c = self.buffers[0].remove_char(index);
+    pub fn remove_char(&mut self, index: u64) -> Operation {
+        let c = self.buffers[0].remove_char(index as usize);
         Operation::RemoveChar(index, c)
     }
 
-    pub fn remove(&mut self, from: usize, to: usize) -> Operation {
-        let text = self.buffers[0].remove(from, to);
+    pub fn remove(&mut self, from: u64, to: u64) -> Operation {
+        let text = self.buffers[0].remove(from as usize, to as usize);
         Operation::Remove(from, to, text)
     }
 
