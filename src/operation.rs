@@ -19,6 +19,15 @@ impl Operation {
         }
     }
 
+    pub fn get_op_coords(&self) -> OpCoords {
+        match *self {
+            InsertChar(index, _) => OpCoords::InsertChar(index),
+            Insert(index, _) => OpCoords::Insert(index),
+            RemoveChar(index, _) => OpCoords::RemoveChar(index),
+            Remove(start, end, _) => OpCoords::Remove(start, end),
+        }
+    }
+
     pub fn do_before(&self, mut op: Operation) -> Option<Operation> {
         let (op_start, op_end, bias): (u64, u64, i64) =
             match *self {
@@ -70,6 +79,13 @@ impl Operation {
 
         Some(op)
     }
+}
+
+pub enum OpCoords {
+    InsertChar(u64),
+    Insert(u64),
+    RemoveChar(u64),
+    Remove(u64, u64),
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

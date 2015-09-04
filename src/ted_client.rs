@@ -24,15 +24,11 @@ impl TedClient {
         let response: Response = packet.read().unwrap();
         match response {
             Response::Op(id, success) => {
-                if success{
-                    self.pending[id as usize] = None;
-                } else {
-                }
             }
         }
     }
 
-    fn on_operation(&mut self, op: Operation) {
+    fn on_operation(&mut self, index: usize, op: Operation) {
         let op_id = self.next_op_id();
 
         let mut packet = net::OutPacket::new();
