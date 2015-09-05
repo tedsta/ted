@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use net;
-use operation::Operation;
+use operation::{OpCoords, Operation};
 use ted::Ted;
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -11,7 +11,7 @@ pub enum Request {
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Response {
-    Op(u16, bool), // Op(op_id, success?)
+    Op(u16, Option<OpCoords>), // Op(op_id, success?)
 }
 
 pub struct TedServer {
@@ -60,28 +60,25 @@ impl TedServer {
         }
     }
 
-    fn process_operation(&mut self, client_id: net::ClientId, op_id: u16, op: Operation) {
+    fn process_operation(&mut self, client_id: net::ClientId, op_id: u16, mut op: Operation) {
         let client_data = self.client_data.get_mut(&client_id).unwrap();
         let merge_start = client_data.version as usize;
         let merge_end = self.timeline.len();
 
-        let mut op = Some(op);
+        let mut op_success = true;
         for timeline_op in &self.timeline[merge_start..merge_end] {
-            op = op.and_then(|op| timeline_op.do_before(op));
-            if op.is_none() { break; }
+            op_success = timeline_op.do_before(&mut op);
+            if !op_success { break; }
         }
 
         let response =
-            match op {
-                Some(op) => {
-                    self.timeline.push(op);
-                    client_data.version = self.timeline.len() as u64;
-
-                    Response::Op(op_id, true);
-                },
-                None => {
-                    Response::Op(op_id, false);
-                },
+            if op_success {
+                let response = Response::Op(op_id, Some(op.get_coords()));
+                self.timeline.push(op);
+                client_data.version = self.timeline.len() as u64;
+                response
+            } else {
+                Response::Op(op_id, None)
             };
         
         let mut packet = net::OutPacket::new();

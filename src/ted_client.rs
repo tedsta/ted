@@ -23,7 +23,15 @@ impl TedClient {
     pub fn handle_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
         let response: Response = packet.read().unwrap();
         match response {
-            Response::Op(id, success) => {
+            Response::Op(id, new_coords) => {
+                match new_coords {
+                    Some(new_coords) => {
+                        // TODO: Update succeeded operation's coordinates
+                    },
+                    None => {
+                        // TODO: Remove failed operation
+                    },
+                }
             }
         }
     }

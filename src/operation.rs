@@ -19,7 +19,7 @@ impl Operation {
         }
     }
 
-    pub fn get_op_coords(&self) -> OpCoords {
+    pub fn get_coords(&self) -> OpCoords {
         match *self {
             InsertChar(index, _) => OpCoords::InsertChar(index),
             Insert(index, _) => OpCoords::Insert(index),
@@ -61,7 +61,7 @@ impl Operation {
         }
     }
 
-    pub fn do_before(&self, mut op: Operation) -> Option<Operation> {
+    pub fn do_before(&self, mut op: &mut Operation) -> bool {
         let (op_start, op_end, bias): (u64, u64, i64) =
             match *self {
                 InsertChar(index, _) => {
@@ -78,7 +78,7 @@ impl Operation {
                 },
             };
 
-        match op {
+        match *op {
             InsertChar(ref mut index, _) => {
                 if *index >= op_start && *index <= op_end && bias < 0 {
                     *index = op_start;
@@ -95,14 +95,14 @@ impl Operation {
             },
             RemoveChar(ref mut index, _) => {
                 if *index >= op_start && *index <= op_end && bias < 0 {
-                    return None;
+                    return false;
                 } else if *index > op_start {
                     *index = ((*index as i64) + bias) as u64;
                 }
             },
             Remove(ref mut start, ref mut end, _) => {
                 if *end >= op_start && *start <= op_end && bias < 0 {
-                    return None;
+                    return false;
                 } else if *start > op_start {
                     *start = ((*start as i64) + bias) as u64;
                     *end = ((*end as i64) + bias) as u64;
@@ -110,10 +110,11 @@ impl Operation {
             },
         }
 
-        Some(op)
+        true
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, RustcEncodable, RustcDecodable)]
 pub enum OpCoords {
     InsertChar(u64),
     Insert(u64),
