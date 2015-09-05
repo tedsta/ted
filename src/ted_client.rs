@@ -2,12 +2,12 @@ use cursor::Cursor;
 use net;
 use operation::Operation;
 use ted::Ted;
-use ted_server::{Request, Response};
+use ted_server::{PacketId, Request, Response};
 
 pub struct TedClient {
     client: net::Client,
 
-    pending: Vec<Option<usize>>,
+    pending: Vec<usize>,
     free_ids: Vec<u16>,
 }
 
@@ -21,23 +21,42 @@ impl TedClient {
     }
 
     pub fn handle_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
+        let packet_id = packet.read().unwrap();
+
+        match packet_id {
+            PacketId::Response => { self.handle_results_packet(ted, packet); },
+            PacketId::Sync => { self.handle_sync_packet(ted, packet); },
+        }
+    }
+
+    fn handle_results_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
         let response: Response = packet.read().unwrap();
         match response {
             Response::Op(id, new_coords) => {
+                let op_index = self.pending[id as usize];
                 match new_coords {
                     Some(new_coords) => {
-                        // TODO: Update succeeded operation's coordinates
+                        ted.log[op_index].set_coords(&new_coords);
                     },
                     None => {
-                        // TODO: Remove failed operation
+                        ted.log.remove(op_index);
                     },
                 }
+                self.free_pending_op(id);
             }
         }
     }
 
-    fn on_operation(&mut self, index: usize, op: Operation) {
-        let op_id = self.next_op_id();
+    fn handle_sync_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
+        let num_ops = packet.read().unwrap();
+        for _ in 0..num_ops {
+            let op = packet.read().unwrap();
+            ted.do_operation(&op);
+        }
+    }
+
+    fn on_operation(&mut self, op_index: usize, op: Operation) {
+        let op_id = self.queue_op(op_index);
 
         let mut packet = net::OutPacket::new();
         packet.write(&Request::Op(op_id, op));
@@ -47,14 +66,21 @@ impl TedClient {
     fn cursor_moved(&mut self, cursor: &Cursor) {
     }
 
-    fn next_op_id(&mut self) -> u16 {
+    fn queue_op(&mut self, op_index: usize) -> u16 {
         match self.free_ids.pop() {
-            Some(id) => id,
+            Some(id) => {
+                self.pending[id as usize] = op_index;
+                id
+            },
             None => {
                 let id = self.pending.len() as u16;
-                self.pending.push(Some(0));
+                self.pending.push(op_index);
                 id
             }
         }
+    }
+
+    fn free_pending_op(&mut self, op_id: u16) {
+        self.free_ids.push(op_id);
     }
 }

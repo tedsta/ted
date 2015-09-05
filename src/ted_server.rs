@@ -14,6 +14,12 @@ pub enum Response {
     Op(u16, Option<OpCoords>), // Op(op_id, success?)
 }
 
+#[derive(RustcEncodable, RustcDecodable)]
+pub enum PacketId {
+    Response,
+    Sync,
+}
+
 pub struct TedServer {
     ted: Ted,
     
@@ -61,16 +67,21 @@ impl TedServer {
     }
 
     fn process_operation(&mut self, client_id: net::ClientId, op_id: u16, mut op: Operation) {
+        self.sync_client(client_id);
+
         let client_data = self.client_data.get_mut(&client_id).unwrap();
         let merge_start = client_data.version as usize;
         let merge_end = self.timeline.len();
 
+
+        // Adjust op's coordinates because client may not know what happened since 
         let mut op_success = true;
         for timeline_op in &self.timeline[merge_start..merge_end] {
             op_success = timeline_op.do_before(&mut op);
             if !op_success { break; }
         }
 
+        // Build the response
         let response =
             if op_success {
                 let response = Response::Op(op_id, Some(op.get_coords()));
@@ -82,6 +93,7 @@ impl TedServer {
             };
         
         let mut packet = net::OutPacket::new();
+        packet.write(&PacketId::Response);
         packet.write(&response);
         self.slot.send(client_id, packet);
     }
@@ -90,6 +102,7 @@ impl TedServer {
         let client_data = self.client_data.get_mut(&client_id).unwrap();
         if client_data.version < self.timeline.len() as u64 {
             let mut packet = net::OutPacket::new();
+            packet.write(&PacketId::Sync);
 
             // Write all of the operations that happened since last sync
             let merge_start = client_data.version as usize;

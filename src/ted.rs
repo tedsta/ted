@@ -24,7 +24,7 @@ pub struct Ted {
 
     buffers: Vec<Buffer>,
 
-    log: Vec<Operation>,
+    pub log: Vec<Operation>,
     log_index: usize, // Current position in the log from undoing/redoing
 
     pub dirty: bool,
@@ -210,6 +210,10 @@ impl Ted {
         self.log.truncate(self.log_index+1);
         self.log.push(operation);
         self.log_index = self.log.len()-1;
+    }
+
+    pub fn log_entry_mut(&mut self, index: usize) -> &mut Operation {
+        &mut self.log[index]
     }
 
     pub fn mode(&self) -> Mode {
