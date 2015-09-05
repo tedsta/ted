@@ -5,10 +5,12 @@ use ted::Ted;
 use ted_server::{PacketId, Request, Response};
 
 pub struct TedClient {
-    client: net::Client,
+    pub client: net::Client,
 
     pending: Vec<usize>,
     free_ids: Vec<u16>,
+
+    op_queue: usize, // Start index in ted.log of ops that need to be sent to the server
 }
 
 impl TedClient {
@@ -17,6 +19,19 @@ impl TedClient {
             client: client,
             pending: Vec::new(),
             free_ids: Vec::new(),
+            op_queue: 0,
+        }
+    }
+
+    pub fn update(&mut self, ted: &mut Ted) {
+        for i in self.op_queue..ted.log.len() {
+            // TODO: Optimize, I shouldn't have to clone
+            self.send_operation(i, ted.log[i].clone());
+        }
+        self.op_queue = ted.log.len();
+
+        while let Ok(mut packet) = self.client.try_receive() {
+            self.handle_packet(ted, &mut packet);
         }
     }
 
@@ -55,7 +70,7 @@ impl TedClient {
         }
     }
 
-    fn on_operation(&mut self, op_index: usize, op: Operation) {
+    fn send_operation(&mut self, op_index: usize, op: Operation) {
         let op_id = self.queue_op(op_index);
 
         let mut packet = net::OutPacket::new();

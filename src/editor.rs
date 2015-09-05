@@ -15,10 +15,13 @@ use rustbox::{
     RustBox
 };
 
+use net;
 use ted::{Event, Mode, Ted};
+use ted_client::TedClient;
 
 pub struct Editor {
     ted: Ted,
+    ted_client: Option<TedClient>,
     rust_box: RustBox,
 
     left_column: usize,
@@ -35,6 +38,7 @@ impl Editor {
 
         Editor {
             ted: Ted::new((rust_box.height()-2) as u64),
+            ted_client: None,
             rust_box: rust_box,
             left_column: 3,
             right_column: 3,
@@ -53,8 +57,11 @@ impl Editor {
                 Result::Err(e) => panic!("Failed to create editor's RustBox: {}", e),
             };
 
+        let client = net::Client::new("127.0.0.1:3910");
+
         Ok(Editor {
             ted: Ted::from_string((rust_box.height()-2) as u64, file_contents),
+            ted_client: Some(TedClient::new(client)),
             rust_box: rust_box,
             left_column: 3,
             right_column: 3,
@@ -69,6 +76,9 @@ impl Editor {
             }
             if let Some(e) = self.poll_event() {
                 self.ted.handle_event(e);
+            }
+            if let Some(ref mut ted_client) = self.ted_client {
+                ted_client.update(&mut self.ted);
             }
         }
     }
@@ -135,8 +145,8 @@ impl Editor {
                     match k {
                         Key::Char(c) => { return Some(Event::Char(c)); },
                         Key::Backspace => { return Some(Event::Backspace) },
-                        Key::Enter => { return Some(Event::Enter) },
-                        Key::Esc => { return Some(Event::Esc) },
+                        Key::Enter => { return Some(Event::Enter); },
+                        Key::Esc => { return Some(Event::Esc); },
                         _ => { },
                     }
                 }

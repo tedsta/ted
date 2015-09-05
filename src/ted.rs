@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use buffer::Buffer;
 use cursor::Cursor;
 use operation::Operation;
