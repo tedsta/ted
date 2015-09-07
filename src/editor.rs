@@ -40,6 +40,22 @@ impl Editor {
         }
     }
 
+    pub fn from_string(text: String) -> Editor {
+        let rust_box =
+            match RustBox::init(Default::default()) {
+                Result::Ok(v) => v,
+                Result::Err(e) => panic!("Failed to create editor's RustBox: {}", e),
+            };
+
+        Editor {
+            ted: Ted::from_string((rust_box.height()-2) as u64, text),
+            ted_client: None,
+            rust_box: rust_box,
+            left_column: 3,
+            right_column: 3,
+        }
+    }
+
     pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Editor> {
         let rust_box =
             match RustBox::init(Default::default()) {

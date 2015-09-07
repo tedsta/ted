@@ -63,13 +63,13 @@ impl TedClient {
     }
 
     fn handle_sync_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
-        //let num_ops: u64 = packet.read().unwrap();
-        ted.do_operation(&Operation::Insert(3, "a".to_string()));
+        let num_ops: u64 = packet.read().unwrap();
+        //ted.do_operation(&Operation::Insert(3, "a".to_string()));
         //ted.insert(0, format!("num_ops: {}", num_ops));
-        //for _ in 0..num_ops {
-            //let op = packet.read().unwrap();
-            //ted.do_operation(&op);
-        //}
+        for _ in 0..num_ops {
+            let op = packet.read().unwrap();
+            ted.do_operation(&op);
+        }
     }
 
     fn send_operation(&mut self, op_index: usize, op: Operation) {

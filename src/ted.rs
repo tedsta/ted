@@ -58,23 +58,6 @@ impl Ted {
         }
     }
 
-    pub fn from_str(height: u64, text: &str) -> Ted {
-        Ted {
-            mode: Mode::Normal,
-            scroll: 0,
-            height: height,
-            cursor: Cursor { line: 0, column: 0, buf_index: 0 },
-
-            buffers: vec![Buffer::from_str(text), Buffer::new()],
-            
-            log: Vec::new(),
-            log_index: 0,
-
-            dirty: true,
-            running: true,
-        }
-    }
-
     pub fn from_string(height: u64, text: String) -> Ted {
         Ted {
             mode: Mode::Normal,
@@ -255,6 +238,7 @@ impl Ted {
 
     pub fn do_operation(&mut self, operation: &Operation) {
         self.dirty = true;
+        self.cursor.op_adjust_cursor(&self.buffers[0], operation);
         match *operation {
             Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index as usize, c); },
             Operation::Insert(index, ref text) => { self.buffers[0].insert(index as usize, text.as_str()); },

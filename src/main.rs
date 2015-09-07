@@ -19,20 +19,6 @@ mod ted_client;
 mod ted_server;
 
 fn main() {
-    let mut server = net::Server::new();
-    let slot = server.create_slot(); // Create default slot
-    let mut ted_server = TedServer::new(slot);
-
-    // Start the server engine thing
-    Builder::new().name("server_master".to_string()).spawn(move || {
-        server.listen("localhost:3910");
-    }).unwrap();
-
-    // Start the ted server
-    Builder::new().name("ted_server".to_string()).spawn(move || {
-        ted_server.run();
-    }).unwrap();
-
     // Run our client editor
-    Editor::from_file("src/ted.rs").unwrap().run();
+    Editor::from_string("fooobarrrr\nyumm I like cheese\ncheese loves me too <3.".to_string()).run();
 }

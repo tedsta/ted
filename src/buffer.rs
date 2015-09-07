@@ -12,14 +12,6 @@ impl Buffer {
         }
     }
 
-    pub fn from_str(text: &str) -> Buffer {
-        let line_info = build_line_info(text);
-        Buffer {
-            buf: text.to_string(),
-            line_info: line_info,
-        }
-    }
-
     pub fn from_string(text: String) -> Buffer {
         let line_info = build_line_info(text.as_str());
         Buffer {
