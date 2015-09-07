@@ -1,4 +1,5 @@
 use buffer::Buffer;
+use operation::Operation;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Cursor {
@@ -78,7 +79,62 @@ impl Cursor {
         (self.buf_index - (line_info.buf_index as u64), self.line)
     }
 
-    /// Calculates the cursor's index within the specified buffer
+    /// Moves the cursor right and returns the new index within the buffer
+    pub fn op_adjust_cursor(&mut self, buffer: &Buffer, op: &Operation) {
+        match *op {
+            Operation::InsertChar(index, c) => {
+                // Insertion only pushes cursor forward if it happened behind or on the cursor
+                if index <= self.buf_index {
+                    if c == '\n' {
+                        self.line += 1;
+                    }
+                    self.buf_index += 1;
+                    self.calculate_column(buffer);
+                }
+            },
+            Operation::Insert(index, ref text) => {
+                // Insertion only pushes cursor forward if it happened behind or on the cursor
+                if index <= self.buf_index {
+                    let newline_count = text.chars().filter(|c| *c == '\n').count();
+                    self.line += newline_count as u64;
+                    self.buf_index += text.len() as u64;
+                    self.calculate_column(buffer);
+                }
+            },
+            Operation::RemoveChar(index, c) => {
+                // Remove only pulls cursor backward if it happened behind or on the cursor
+                if index <= self.buf_index && self.buf_index > 0 {
+                    if c == '\n' {
+                        // Handle special newline case
+                        self.line -= 1;
+                    }
+                    self.buf_index -= 1;
+                    self.calculate_column(buffer);
+                }
+            },
+            Operation::Remove(start, end, ref text) => {
+                // Remove only pulls cursor backward if it happened behind or on the cursor
+                if start <= self.buf_index && self.buf_index > 0 {
+                    if end < self.buf_index {
+                        let newline_count = text.chars().filter(|c| *c == '\n').count();
+                        self.line -= newline_count as u64;
+                        self.buf_index -= text.len() as u64;
+                        self.calculate_column(buffer);
+                    } else {
+                        let newline_count =
+                            text[0..(self.buf_index-start) as usize].chars()
+                                                                    .filter(|c| *c == '\n')
+                                                                    .count();
+                        self.line -= newline_count as u64;
+                        self.buf_index = start;
+                        self.calculate_column(buffer);
+                    }
+                }
+            },
+        }
+    }
+
+    /// Calculates the cursor's index within the specified buffer based on line and column
     fn calculate_index(&mut self, buffer: &Buffer) {
         use std::cmp;
 
@@ -89,5 +145,11 @@ impl Cursor {
             } else {
                 line_info.buf_index
             } as u64;
+    }
+
+    /// Calculates the cursor's column within the specified buffer based on line and buf_index
+    fn calculate_column(&mut self, buffer: &Buffer) {
+        let line_info = buffer.line_info()[self.line as usize];
+        self.column = self.buf_index - line_info.buf_index as u64;
     }
 }

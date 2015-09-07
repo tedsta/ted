@@ -1,3 +1,10 @@
+use std::fs::File;
+use std::io;
+use std::io::{
+    Read,
+    BufReader,
+};
+use std::path::Path;
 use std::collections::VecDeque;
 
 use buffer::Buffer;
@@ -83,6 +90,15 @@ impl Ted {
             dirty: true,
             running: true,
         }
+    }
+
+    pub fn from_file<P: AsRef<Path>>(height: u64, path: P) -> io::Result<Ted> {
+        // Read the file into file_contents
+        let mut file = BufReader::new(try!(File::open(path)));
+        let mut file_contents = String::new();
+        try!(file.read_to_string(&mut file_contents));
+
+        Ok(Ted::from_string(height, file_contents))
     }
 
     pub fn handle_event(&mut self, e: Event) {
@@ -238,6 +254,7 @@ impl Ted {
     // Operation stuff
 
     pub fn do_operation(&mut self, operation: &Operation) {
+        self.dirty = true;
         match *operation {
             Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index as usize, c); },
             Operation::Insert(index, ref text) => { self.buffers[0].insert(index as usize, text.as_str()); },
@@ -247,21 +264,25 @@ impl Ted {
     }
 
     pub fn insert_char(&mut self, index: u64, c: char) -> Operation {
+        self.dirty = true;
         self.buffers[0].insert_char(index as usize, c);
         Operation::InsertChar(index, c)
     }
 
     pub fn insert(&mut self, index: u64, text: String) -> Operation {
+        self.dirty = true;
         self.buffers[0].insert(index as usize, text.as_str());
         Operation::Insert(index, text)
     }
 
     pub fn remove_char(&mut self, index: u64) -> Operation {
+        self.dirty = true;
         let c = self.buffers[0].remove_char(index as usize);
         Operation::RemoveChar(index, c)
     }
 
     pub fn remove(&mut self, from: u64, to: u64) -> Operation {
+        self.dirty = true;
         let text = self.buffers[0].remove(from as usize, to as usize);
         Operation::Remove(from, to, text)
     }

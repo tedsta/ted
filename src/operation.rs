@@ -128,47 +128,49 @@ pub enum OpCoords {
 #[test]
 fn do_before_removed_same() {
     let before = Remove(0, 10, "asdfghjklz".to_string());
-    let after = Remove(0, 10, "asdfghjklz".to_string());
+    let mut after = Remove(0, 10, "asdfghjklz".to_string());
 
-    assert!(before.do_before(after) == None);
+    assert!(before.do_before(&mut after) == false);
 }
 
 #[test]
 fn do_before_removed_touch_left() {
     let before = Remove(5, 10, "asdfghjklz".to_string());
-    let after = Remove(1, 7, "hellos".to_string());
+    let mut after = Remove(1, 7, "hellos".to_string());
 
-    assert!(before.do_before(after) == None);
+    assert!(before.do_before(&mut after) == false);
 }
 
 #[test]
 fn do_before_removed_touch_right() {
     let before = Remove(0, 10, "asdfghjklz".to_string());
-    let after = Remove(5, 15, "hellosderphello".to_string());
+    let mut after = Remove(5, 15, "hellosderphello".to_string());
 
-    assert!(before.do_before(after) == None);
+    assert!(before.do_before(&mut after) == false);
 }
 
 #[test]
 fn do_before_removed_contained() {
     let before = Remove(0, 10, "asdfghjklz".to_string());
-    let after = Remove(1, 9, "hellosir".to_string());
+    let mut after = Remove(1, 9, "hellosir".to_string());
 
-    assert!(before.do_before(after) == None);
+    assert!(before.do_before(&mut after) == false);
 }
 
 #[test]
 fn insert_char_do_before_insert_char() {
     let before = InsertChar(0, 'a');
-    let after = InsertChar(1, 'a');
+    let mut after = InsertChar(1, 'a');
 
-    assert!(before.do_before(after) == Some(InsertChar(2, 'a')));
+    assert!(before.do_before(&mut after) == true);
+    assert!(after == InsertChar(2, 'a'));
 }
 
 #[test]
 fn insert_char_do_before_insert_char_no_effect() {
     let before = InsertChar(4, 'a');
-    let after = InsertChar(2, 'a');
+    let mut after = InsertChar(2, 'a');
 
-    assert!(before.do_before(after) == Some(InsertChar(2, 'a')));
+    assert!(before.do_before(&mut after) == true);
+    assert!(after == InsertChar(2, 'a'));
 }

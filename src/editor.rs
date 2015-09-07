@@ -1,11 +1,6 @@
 use std::error::Error;
 use std::default::Default;
-use std::fs::File;
 use std::io;
-use std::io::{
-    Read,
-    BufReader,
-};
 use std::path::Path;
 
 use rustbox;
@@ -46,21 +41,17 @@ impl Editor {
     }
 
     pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Editor> {
-        // Read the file into file_contents
-        let mut file = BufReader::new(try!(File::open(path)));
-        let mut file_contents = String::new();
-        try!(file.read_to_string(&mut file_contents));
-
         let rust_box =
             match RustBox::init(Default::default()) {
                 Result::Ok(v) => v,
                 Result::Err(e) => panic!("Failed to create editor's RustBox: {}", e),
             };
 
+        let ted = try!(Ted::from_file((rust_box.height()-2) as u64, path));
         let client = net::Client::new("127.0.0.1:3910");
 
         Ok(Editor {
-            ted: Ted::from_string((rust_box.height()-2) as u64, file_contents),
+            ted: ted,
             ted_client: Some(TedClient::new(client)),
             rust_box: rust_box,
             left_column: 3,

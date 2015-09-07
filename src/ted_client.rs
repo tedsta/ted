@@ -39,12 +39,12 @@ impl TedClient {
         let packet_id = packet.read().unwrap();
 
         match packet_id {
-            PacketId::Response => { self.handle_results_packet(ted, packet); },
+            PacketId::Response => { self.handle_response_packet(ted, packet); },
             PacketId::Sync => { self.handle_sync_packet(ted, packet); },
         }
     }
 
-    fn handle_results_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
+    fn handle_response_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
         let response: Response = packet.read().unwrap();
         match response {
             Response::Op(id, new_coords) => {
@@ -63,11 +63,13 @@ impl TedClient {
     }
 
     fn handle_sync_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
-        let num_ops = packet.read().unwrap();
-        for _ in 0..num_ops {
-            let op = packet.read().unwrap();
-            ted.do_operation(&op);
-        }
+        //let num_ops: u64 = packet.read().unwrap();
+        ted.do_operation(&Operation::Insert(3, "a".to_string()));
+        //ted.insert(0, format!("num_ops: {}", num_ops));
+        //for _ in 0..num_ops {
+            //let op = packet.read().unwrap();
+            //ted.do_operation(&op);
+        //}
     }
 
     fn send_operation(&mut self, op_index: usize, op: Operation) {

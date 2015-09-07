@@ -32,7 +32,7 @@ pub struct TedServer {
 impl TedServer {
     pub fn new(slot: net::ServerSlot) -> TedServer {
         TedServer {
-            ted: Ted::new(100),
+            ted: Ted::from_file(1, "src/ted.rs").unwrap(),
 
             slot: slot,
 
@@ -45,9 +45,11 @@ impl TedServer {
         loop {
             match self.slot.receive() {
                 net::SlotInMsg::Joined(client_id) => {
+                    println!("Client {} joined", client_id);
                     self.client_data.insert(client_id, ClientData::new(self.timeline.len() as u64, 0.25));
                 },
                 net::SlotInMsg::Disconnected(client_id) => {
+                    println!("Client {} disconnected", client_id);
                     self.client_data.remove(&client_id);
                 },
                 net::SlotInMsg::ReceivedPacket(client_id, mut packet) => {
@@ -73,6 +75,7 @@ impl TedServer {
         let merge_start = client_data.version as usize;
         let merge_end = self.timeline.len();
 
+        println!("Processing operation");
 
         // Adjust op's coordinates because client may not know what happened since 
         let mut op_success = true;
@@ -80,6 +83,9 @@ impl TedServer {
             op_success = timeline_op.do_before(&mut op);
             if !op_success { break; }
         }
+
+        println!("Adjusted coordinates based on {} prior ops", merge_end-merge_start);
+        println!("Op successful? {}", op_success);
 
         // Build the response
         let response =
@@ -107,7 +113,10 @@ impl TedServer {
             // Write all of the operations that happened since last sync
             let merge_start = client_data.version as usize;
             let merge_end = self.timeline.len();
-            packet.write(&((merge_start - merge_end) as u64)); // Write the number of operations
+
+            println!("syncing {} ops", merge_end-merge_start);
+            packet.write(&((merge_end - merge_start) as u64)); // Write the number of operations
+
             for timeline_op in &self.timeline[merge_start..merge_end] {
                 packet.write(timeline_op);
             }
