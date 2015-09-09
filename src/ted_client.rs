@@ -69,7 +69,13 @@ impl TedClient {
     fn handle_sync_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
         let num_ops: u64 = packet.read().unwrap();
         for _ in 0..num_ops {
-            let op = packet.read().unwrap();
+            let mut op = packet.read().unwrap();
+
+            for pending_op in &self.pending {
+                let pending_op = &ted.log[*pending_op];
+                pending_op.do_before(&mut op);
+            }
+
             ted.do_operation(&op);
             self.timeline.push(op);
         }
