@@ -7,6 +7,8 @@ use ted_server::{PacketId, Request, Response};
 pub struct TedClient {
     pub client: net::Client,
 
+    timeline: Vec<Operation>,
+
     pending: Vec<usize>,
     free_ids: Vec<u16>,
 
@@ -17,6 +19,7 @@ impl TedClient {
     pub fn new(client: net::Client) -> TedClient {
         TedClient {
             client: client,
+            timeline: Vec::new(),
             pending: Vec::new(),
             free_ids: Vec::new(),
             op_queue: 0,
@@ -52,6 +55,7 @@ impl TedClient {
                 match new_coords {
                     Some(new_coords) => {
                         ted.log[op_index].set_coords(&new_coords);
+                        self.timeline.push(ted.log[op_index].clone());
                     },
                     None => {
                         ted.log.remove(op_index);
@@ -64,11 +68,10 @@ impl TedClient {
 
     fn handle_sync_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
         let num_ops: u64 = packet.read().unwrap();
-        //ted.do_operation(&Operation::Insert(3, "a".to_string()));
-        //ted.insert(0, format!("num_ops: {}", num_ops));
         for _ in 0..num_ops {
             let op = packet.read().unwrap();
             ted.do_operation(&op);
+            self.timeline.push(op);
         }
     }
 
@@ -76,7 +79,7 @@ impl TedClient {
         let op_id = self.queue_op(op_index);
 
         let mut packet = net::OutPacket::new();
-        packet.write(&Request::Op(op_id, op));
+        packet.write(&Request::Op(self.timeline.len() as u64, op_id, op));
         self.client.send(&packet);
     }
 

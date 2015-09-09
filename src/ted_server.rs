@@ -6,7 +6,7 @@ use ted::Ted;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request {
-    Op(u16, Operation), // Op(op_id, op)
+    Op(u64, u16, Operation), // Op(client_version, op_id, op)
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -25,7 +25,7 @@ pub struct TedServer {
     
     slot: net::ServerSlot,
     
-    timeline: Vec<Operation>,
+    timeline: Vec<(net::ClientId, Operation)>,
     client_data: HashMap<net::ClientId, ClientData>,
 }
 
@@ -62,26 +62,29 @@ impl TedServer {
     fn handle_packet(&mut self, client_id: net::ClientId, packet: &mut net::InPacket) {
         let packet: Request = packet.read().unwrap();
         match packet {
-            Request::Op(op_id, op) => {
-                self.process_operation(client_id, op_id, op);
+            Request::Op(client_version, op_id, op) => {
+                self.process_operation(client_id, client_version, op_id, op);
             },
         }
     }
 
-    fn process_operation(&mut self, client_id: net::ClientId, op_id: u16, mut op: Operation) {
+    fn process_operation(&mut self, client_id: net::ClientId,
+                         client_version: u64, op_id: u16, mut op: Operation) {
         self.sync_client(client_id);
 
         let client_data = self.client_data.get_mut(&client_id).unwrap();
-        let merge_start = client_data.version as usize;
+        let merge_start = client_version as usize;
         let merge_end = self.timeline.len();
 
         println!("Processing operation");
 
         // Adjust op's coordinates because client may not know what happened since 
         let mut op_success = true;
-        for timeline_op in &self.timeline[merge_start..merge_end] {
-            op_success = timeline_op.do_before(&mut op);
-            if !op_success { break; }
+        for &(op_client_id, ref timeline_op) in &self.timeline[merge_start..merge_end] {
+            if op_client_id != client_id {
+                op_success = timeline_op.do_before(&mut op);
+                if !op_success { break; }
+            }
         }
 
         println!("Adjusted coordinates based on {} prior ops", merge_end-merge_start);
@@ -91,8 +94,9 @@ impl TedServer {
         let response =
             if op_success {
                 let response = Response::Op(op_id, Some(op.get_coords()));
-                self.timeline.push(op);
+                self.timeline.push((client_id, op));
                 client_data.version = self.timeline.len() as u64;
+                client_data.last_op = self.timeline.len() - 1;
                 response
             } else {
                 Response::Op(op_id, None)
@@ -117,17 +121,20 @@ impl TedServer {
             println!("syncing {} ops", merge_end-merge_start);
             packet.write(&((merge_end - merge_start) as u64)); // Write the number of operations
 
-            for timeline_op in &self.timeline[merge_start..merge_end] {
+            for &(_, ref timeline_op) in &self.timeline[merge_start..merge_end] {
                 packet.write(timeline_op);
             }
 
             self.slot.send(client_id, packet);
+
+            client_data.version = self.timeline.len() as u64;
         }
     }
 }
 
 struct ClientData {
     version: u64,
+    last_op: usize,
     send_rate: f64,
 }
 
@@ -135,6 +142,7 @@ impl ClientData {
     fn new(version: u64, send_rate: f64) -> ClientData {
         ClientData {
             version: version,
+            last_op: 0,
             send_rate: send_rate,
         }
     }
