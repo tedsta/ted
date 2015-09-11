@@ -16,6 +16,7 @@ use ted_client::TedClient;
 
 pub struct Editor {
     ted: Ted,
+    file_path: Option<String>,
     ted_client: Option<TedClient>,
     rust_box: RustBox,
 
@@ -33,6 +34,7 @@ impl Editor {
 
         Editor {
             ted: Ted::new((rust_box.height()-2) as u64),
+            file_path: None,
             ted_client: None,
             rust_box: rust_box,
             left_column: 3,
@@ -49,6 +51,7 @@ impl Editor {
 
         Editor {
             ted: Ted::from_string((rust_box.height()-2) as u64, text),
+            file_path: None,
             ted_client: None,
             rust_box: rust_box,
             left_column: 3,
@@ -56,18 +59,19 @@ impl Editor {
         }
     }
 
-    pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Editor> {
+    pub fn from_file(path: String) -> io::Result<Editor> {
         let rust_box =
             match RustBox::init(Default::default()) {
                 Result::Ok(v) => v,
                 Result::Err(e) => panic!("Failed to create editor's RustBox: {}", e),
             };
 
-        let ted = try!(Ted::from_file((rust_box.height()-2) as u64, path));
+        let ted = try!(Ted::from_file((rust_box.height()-2) as u64, path.as_str()));
         let client = net::Client::new("127.0.0.1:3910");
 
         Ok(Editor {
             ted: ted,
+            file_path: Some(path),
             ted_client: Some(TedClient::new(client)),
             rust_box: rust_box,
             left_column: 3,
