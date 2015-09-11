@@ -7,3 +7,4 @@ authors = ["Theodore DeRego <tderego94@gmail.com>"]
 bincode = "0.3.0"
 rustc-serialize = "0.3.*"
 rustbox = "0.6.3"
+clap = "1.4.0"

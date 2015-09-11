@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::io;
 
 use cursor::Cursor;
 use net;
@@ -11,7 +12,6 @@ pub struct TedClient {
 
     timeline: Vec<Operation>,
     last_sync: usize,
-    sync_queue: Vec<Operation>,
 
     pending_queue: usize,
 
@@ -24,10 +24,21 @@ impl TedClient {
             client: client,
             timeline: Vec::new(),
             last_sync: 0,
-            sync_queue: Vec::new(),
             pending_queue: 0,
             op_queue: 0,
         }
+    }
+    
+    pub fn download_buffer(&mut self) -> Result<Ted, String> {
+        let mut packet = self.client.receive();
+        let buffer: String = try!(packet.read().map_err(|e| e.to_string()));
+        let timeline: Vec<(net::ClientId, Operation)> =
+            try!(packet.read().map_err(|e| e.to_string()));
+        self.timeline = timeline.into_iter().map(|(_, op)| op).collect();
+
+        self.last_sync = self.timeline.len();
+
+        Ok(Ted::from_string(1, buffer))
     }
 
     pub fn update(&mut self, ted: &mut Ted) {

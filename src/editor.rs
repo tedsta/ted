@@ -74,6 +74,27 @@ impl Editor {
         })
     }
 
+    pub fn from_server(address: &str) -> Result<Editor, String> {
+        let rust_box =
+            try!(RustBox::init(Default::default())
+                .map_err(|e| format!("Failed to create editor's RustBox: {}", e)));
+
+        let client = net::Client::new(address);
+        let mut ted_client = TedClient::new(client);
+        let mut ted =
+            try!(ted_client.download_buffer()
+                           .map_err(|e| format!("Failed to download buffer from server: {}", e)));
+        ted.height = (rust_box.height()-2) as u64;
+
+        Ok(Editor {
+            ted: ted,
+            ted_client: Some(ted_client),
+            rust_box: rust_box,
+            left_column: 3,
+            right_column: 3,
+        })
+    }
+
     pub fn run(&mut self) {
         while self.ted.running() {
             if self.ted.dirty {

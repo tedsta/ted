@@ -47,6 +47,12 @@ impl TedServer {
                 net::SlotInMsg::Joined(client_id) => {
                     println!("Client {} joined", client_id);
                     self.client_data.insert(client_id, ClientData::new(self.timeline.len() as u64, 0.25));
+
+                    // Send the current buffer and timeline
+                    let mut packet: net::OutPacket = net::OutPacket::new();
+                    packet.write(&self.ted.buffer(0).unwrap().buffer());
+                    packet.write(&self.timeline);
+                    self.slot.send(client_id, packet);
                 },
                 net::SlotInMsg::Disconnected(client_id) => {
                     println!("Client {} disconnected", client_id);
@@ -90,11 +96,12 @@ impl TedServer {
         println!("Adjusted coordinates based on {} prior ops", merge_end-merge_start);
         println!("Op successful? {}", op_success);
 
-        // Send the response
+        // Do and send the response
         if op_success {
-            let response = Response::Op;
+            self.ted.do_operation(&op);
             self.timeline.push((client_id, op));
 
+            let response = Response::Op;
             let mut packet = net::OutPacket::new();
             packet.write(&PacketId::Response);
             packet.write(&response);

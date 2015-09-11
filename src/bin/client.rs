@@ -4,5 +4,5 @@ use ted::editor::Editor;
 
 fn main() {
     // Run our client editor
-    Editor::from_file("src/ted.rs".to_string()).unwrap().run();
+    Editor::from_server("127.0.0.1:3910").unwrap().run();
 }
