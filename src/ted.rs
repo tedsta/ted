@@ -4,7 +4,6 @@ use std::io::{
     Read,
     BufReader,
 };
-use std::path::Path;
 use std::collections::VecDeque;
 
 use buffer::Buffer;
@@ -38,6 +37,7 @@ pub struct Ted {
 
     pub dirty: bool,
     running: bool,
+    file_path: Option<String>,
 }
 
 impl Ted {
@@ -55,6 +55,7 @@ impl Ted {
 
             dirty: true,
             running: true,
+            file_path: None,
         }
     }
 
@@ -72,16 +73,31 @@ impl Ted {
 
             dirty: true,
             running: true,
+            file_path: None,
         }
     }
 
-    pub fn from_file<P: AsRef<Path>>(height: u64, path: P) -> io::Result<Ted> {
+    pub fn from_file(height: u64, path: String) -> io::Result<Ted> {
         // Read the file into file_contents
-        let mut file = BufReader::new(try!(File::open(path)));
+        let mut file = BufReader::new(try!(File::open(path.as_str())));
         let mut file_contents = String::new();
         try!(file.read_to_string(&mut file_contents));
 
-        Ok(Ted::from_string(height, file_contents))
+        Ok(Ted {
+            mode: Mode::Normal,
+            scroll: 0,
+            height: height,
+            cursor: Cursor { line: 0, column: 0, buf_index: 0 },
+
+            buffers: vec![Buffer::from_string(file_contents), Buffer::new()],
+            
+            log: Vec::new(),
+            log_index: 0,
+
+            dirty: true,
+            running: true,
+            file_path: Some(path),
+        })
     }
 
     pub fn handle_event(&mut self, e: Event) {
