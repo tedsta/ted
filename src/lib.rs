@@ -1,4 +1,5 @@
 #![feature(convert)]
+#![feature(drain)]
 
 extern crate bincode;
 extern crate rustc_serialize;

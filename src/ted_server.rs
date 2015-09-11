@@ -6,12 +6,12 @@ use ted::Ted;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request {
-    Op(u64, u16, Operation), // Op(client_version, op_id, op)
+    Op(u64, Operation), // Op(client_version, op_id, op)
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Response {
-    Op(u16, Option<OpCoords>), // Op(op_id, success?)
+    Op,
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -62,14 +62,14 @@ impl TedServer {
     fn handle_packet(&mut self, client_id: net::ClientId, packet: &mut net::InPacket) {
         let packet: Request = packet.read().unwrap();
         match packet {
-            Request::Op(client_version, op_id, op) => {
-                self.process_operation(client_id, client_version, op_id, op);
+            Request::Op(client_version, op) => {
+                self.process_operation(client_id, client_version, op);
             },
         }
     }
 
     fn process_operation(&mut self, client_id: net::ClientId,
-                         client_version: u64, op_id: u16, mut op: Operation) {
+                         client_version: u64, mut op: Operation) {
         self.sync_client(client_id);
 
         let client_data = self.client_data.get_mut(&client_id).unwrap();
@@ -90,22 +90,18 @@ impl TedServer {
         println!("Adjusted coordinates based on {} prior ops", merge_end-merge_start);
         println!("Op successful? {}", op_success);
 
-        // Build the response
-        let response =
-            if op_success {
-                let response = Response::Op(op_id, Some(op.get_coords()));
-                self.timeline.push((client_id, op));
-                client_data.version = self.timeline.len() as u64;
-                client_data.last_op = self.timeline.len() - 1;
-                response
-            } else {
-                Response::Op(op_id, None)
-            };
-        
-        let mut packet = net::OutPacket::new();
-        packet.write(&PacketId::Response);
-        packet.write(&response);
-        self.slot.send(client_id, packet);
+        // Send the response
+        if op_success {
+            let response = Response::Op;
+            self.timeline.push((client_id, op));
+
+            let mut packet = net::OutPacket::new();
+            packet.write(&PacketId::Response);
+            packet.write(&response);
+            self.slot.send(client_id, packet);
+        }
+
+        client_data.version = self.timeline.len() as u64;
     }
 
     fn sync_client(&mut self, client_id: net::ClientId) {
@@ -134,7 +130,6 @@ impl TedServer {
 
 struct ClientData {
     version: u64,
-    last_op: usize,
     send_rate: f64,
 }
 
@@ -142,7 +137,6 @@ impl ClientData {
     fn new(version: u64, send_rate: f64) -> ClientData {
         ClientData {
             version: version,
-            last_op: 0,
             send_rate: send_rate,
         }
     }

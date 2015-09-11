@@ -13,7 +13,7 @@ impl Operation {
     pub fn inverse(self) -> Operation {
         match self {
             InsertChar(index, c) => RemoveChar(index, c),
-            Insert(index, text) => Remove(index, index+((text.len()-1) as u64), text),
+            Insert(index, text) => Remove(index, index+(text.len() as u64), text),
             RemoveChar(index, c) => InsertChar(index, c),
             Remove(start, _, text) => Insert(start, text),
         }
