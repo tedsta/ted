@@ -156,9 +156,11 @@ impl Ted {
             },
             Event::Backspace => {
                 if self.cursor.buf_index > 0 {
-                    self.cursor.buf_index -= 1;
-                    if self.cursor.column == 0 {
+                    if self.cursor.buf_index == self.buffers[0]
+                                                    .line_info()[self.cursor.line as usize]
+                                                    .buf_index as u64 {
                         // Handle special newline case
+                        self.cursor.buf_index -= 1;
                         self.cursor.line -= 1;
                         self.cursor.column =
                             self.buffers[0].line_info()[self.cursor.line as usize].length as u64;
@@ -170,8 +172,6 @@ impl Ted {
 
                     let op = self.remove_char(index);
                     self.log(op);
-                    
-                    self.dirty = true;
                 }
             },
             Event::Enter => {
@@ -181,7 +181,6 @@ impl Ted {
                 self.cursor.column = 0;
                 self.cursor.line += 1;
                 self.cursor.buf_index += 1;
-                self.dirty = true;
             },
             Event::Char(c) => {
                 let index = self.cursor.buf_index;
@@ -189,7 +188,6 @@ impl Ted {
                 self.log(op);
                 self.cursor.column += 1;
                 self.cursor.buf_index += 1;
-                self.dirty = true;
             },
         }
     }

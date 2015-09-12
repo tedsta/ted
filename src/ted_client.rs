@@ -97,9 +97,8 @@ impl TedClient {
         
         let ops = &self.timeline[self.last_sync..];
 
-        if ops.is_empty() {
-            return;
-        }
+        // If there's nothing to merge...
+        if ops.is_empty() { return; }
 
         // Undo operations that are still pending
         for i in (self.pending_queue..ted.log.len()).rev() {

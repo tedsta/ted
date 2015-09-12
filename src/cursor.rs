@@ -31,15 +31,15 @@ impl Cursor {
     pub fn move_left(&mut self, buffer: &Buffer) {
         if self.column > 0 {
             // Cursor can move to the left, need to determine if it's past the current line, though.
-            if self.column < buffer.line_info()[self.line as usize].length as u64 {
+            if self.column <= buffer.line_info()[self.line as usize].length as u64 {
                 self.column -= 1;
-            } else if buffer.line_info()[self.line as usize].length >= 2 {
-                self.column = (buffer.line_info()[self.line as usize].length - 2) as u64;
+            } else if buffer.line_info()[self.line as usize].length >= 1 {
+                self.column = (buffer.line_info()[self.line as usize].length - 1) as u64;
             } else if self.line > 0 {
-                // column = 0 or 1, so cursor is at the beginning of the line, move to previous line
+                // column = 0, so cursor is at the beginning of the line, move to previous line
                 self.line -= 1;
                 if buffer.line_info()[self.line as usize].length > 0 {
-                    self.column = (buffer.line_info()[self.line as usize].length - 1) as u64;
+                    self.column = buffer.line_info()[self.line as usize].length as u64;
                 } else {
                     self.column = 0;
                 }
@@ -48,7 +48,7 @@ impl Cursor {
             // Cursor is at the beginning of the line, move to previous line
             self.line -= 1;
             if buffer.line_info()[self.line as usize].length > 0 {
-                self.column = (buffer.line_info()[self.line as usize].length - 1) as u64;
+                self.column = buffer.line_info()[self.line as usize].length as u64;
             } else {
                 self.column = 0;
             }
@@ -60,7 +60,7 @@ impl Cursor {
     /// Moves the cursor right and returns the new index within the buffer
     pub fn move_right(&mut self, buffer: &Buffer) {
         if buffer.line_info()[self.line as usize].length > 0 &&
-           self.column < (buffer.line_info()[self.line as usize].length - 1) as u64 {
+           self.column < buffer.line_info()[self.line as usize].length as u64 {
             // Cursor can move to the right
             self.column += 1;
         } else if self.line < (buffer.line_count() - 1) as u64 {
@@ -79,7 +79,7 @@ impl Cursor {
         (self.buf_index - (line_info.buf_index as u64), self.line)
     }
 
-    /// Moves the cursor right and returns the new index within the buffer
+    /// Adjusts cursor according to operation
     pub fn op_adjust_cursor(&mut self, buffer: &Buffer, op: &Operation) {
         match *op {
             Operation::InsertChar(index, c) => {
@@ -135,20 +135,20 @@ impl Cursor {
     }
 
     /// Calculates the cursor's index within the specified buffer based on line and column
-    fn calculate_index(&mut self, buffer: &Buffer) {
+    pub fn calculate_index(&mut self, buffer: &Buffer) {
         use std::cmp;
 
         let line_info = buffer.line_info()[self.line as usize];
         self.buf_index =
             if line_info.length > 0 {
-                line_info.buf_index + cmp::min(line_info.length-1, self.column as usize)
+                line_info.buf_index + cmp::min(line_info.length, self.column as usize)
             } else {
                 line_info.buf_index
             } as u64;
     }
 
     /// Calculates the cursor's column within the specified buffer based on line and buf_index
-    fn calculate_column(&mut self, buffer: &Buffer) {
+    pub fn calculate_column(&mut self, buffer: &Buffer) {
         let line_info = buffer.line_info()[self.line as usize];
         self.column = self.buf_index - line_info.buf_index as u64;
     }
