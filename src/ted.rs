@@ -253,14 +253,14 @@ impl Ted {
     // Operation stuff
 
     pub fn do_operation(&mut self, operation: &Operation) {
-        self.dirty = true;
-        self.cursor.op_adjust_cursor(&self.buffers[0], operation);
         match *operation {
             Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index as usize, c); },
             Operation::Insert(index, ref text) => { self.buffers[0].insert(index as usize, text.as_str()); },
             Operation::RemoveChar(index, _) => { self.buffers[0].remove_char(index as usize); },
             Operation::Remove(start, end, _) => { self.buffers[0].remove(start as usize, end as usize); },
         }
+        self.dirty = true;
+        self.cursor.op_adjust_cursor(&self.buffers[0], operation);
     }
 
     pub fn insert_char(&mut self, index: u64, c: char) -> Operation {
