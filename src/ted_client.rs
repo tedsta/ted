@@ -41,16 +41,12 @@ impl TedClient {
         Ok(Ted::from_string(1, buffer))
     }
 
-    pub fn update(&mut self, ted: &mut Ted) {
+    pub fn send_operations(&mut self, ted: &mut Ted) {
         for i in self.op_queue..ted.log.len() {
             // TODO: Optimize, I shouldn't have to clone
             self.send_operation(i, ted.log[i].clone());
         }
         self.op_queue = ted.log.len();
-
-        while let Ok(mut packet) = self.client.try_receive() {
-            self.handle_packet(ted, &mut packet);
-        }
     }
 
     pub fn handle_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {

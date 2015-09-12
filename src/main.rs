@@ -7,6 +7,7 @@ extern crate clap;
 extern crate bincode;
 extern crate rustc_serialize;
 extern crate rustbox;
+extern crate time;
 
 use std::thread::Builder;
 

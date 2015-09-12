@@ -78,37 +78,42 @@ impl TedServer {
                          client_version: u64, mut op: Operation) {
         self.sync_client(client_id);
 
-        let client_data = self.client_data.get_mut(&client_id).unwrap();
-        let merge_start = client_version as usize;
-        let merge_end = self.timeline.len();
+        {
+            let client_data = self.client_data.get_mut(&client_id).unwrap();
+            let merge_start = client_version as usize;
+            let merge_end = self.timeline.len();
 
-        println!("Processing operation");
+            println!("Processing operation");
 
-        // Adjust op's coordinates because client may not know what happened since 
-        let mut op_success = true;
-        for &(op_client_id, ref timeline_op) in &self.timeline[merge_start..merge_end] {
-            if op_client_id != client_id {
-                op_success = timeline_op.do_before(&mut op);
-                if !op_success { break; }
+            // Adjust op's coordinates because client may not know what happened since 
+            let mut op_success = true;
+            for &(op_client_id, ref timeline_op) in &self.timeline[merge_start..merge_end] {
+                if op_client_id != client_id {
+                    op_success = timeline_op.do_before(&mut op);
+                    if !op_success { break; }
+                }
             }
+
+            println!("Adjusted coordinates based on {} prior ops", merge_end-merge_start);
+            println!("Op successful? {}", op_success);
+
+            // Do and send the response
+            if op_success {
+                self.ted.do_operation(&op);
+                self.timeline.push((client_id, op));
+
+                let response = Response::Op;
+                let mut packet = net::OutPacket::new();
+                packet.write(&PacketId::Response);
+                packet.write(&response);
+                self.slot.send(client_id, packet);
+            }
+
+            client_data.version = self.timeline.len() as u64;
         }
 
-        println!("Adjusted coordinates based on {} prior ops", merge_end-merge_start);
-        println!("Op successful? {}", op_success);
-
-        // Do and send the response
-        if op_success {
-            self.ted.do_operation(&op);
-            self.timeline.push((client_id, op));
-
-            let response = Response::Op;
-            let mut packet = net::OutPacket::new();
-            packet.write(&PacketId::Response);
-            packet.write(&response);
-            self.slot.send(client_id, packet);
-        }
-
-        client_data.version = self.timeline.len() as u64;
+        // Sync all the other clients now
+        self.sync_all_clients(Some(client_id));
     }
 
     fn sync_client(&mut self, client_id: net::ClientId) {
@@ -131,6 +136,33 @@ impl TedServer {
             self.slot.send(client_id, packet);
 
             client_data.version = self.timeline.len() as u64;
+        }
+    }
+
+    fn sync_all_clients(&mut self, exclude: Option<net::ClientId>) {
+        for (client_id, client_data) in &mut self.client_data {
+            if let Some(exclude) = exclude {
+                if exclude == *client_id { continue; }
+            }
+            if client_data.version < self.timeline.len() as u64 {
+                let mut packet = net::OutPacket::new();
+                packet.write(&PacketId::Sync);
+
+                // Write all of the operations that happened since last sync
+                let merge_start = client_data.version as usize;
+                let merge_end = self.timeline.len();
+
+                println!("syncing {} ops", merge_end-merge_start);
+                packet.write(&((merge_end - merge_start) as u64)); // Write the number of operations
+
+                for &(_, ref timeline_op) in &self.timeline[merge_start..merge_end] {
+                    packet.write(timeline_op);
+                }
+
+                self.slot.send(*client_id, packet);
+
+                client_data.version = self.timeline.len() as u64;
+            }
         }
     }
 }

@@ -9,6 +9,8 @@ use rustbox::{
     RustBox
 };
 
+use time::Duration;
+
 use net;
 use ted::{Event, Mode, Ted};
 use ted_client::TedClient;
@@ -103,9 +105,14 @@ impl Editor {
             }
             if let Some(e) = self.poll_event() {
                 self.ted.handle_event(e);
+                if let Some(ref mut ted_client) = self.ted_client {
+                    ted_client.send_operations(&mut self.ted);
+                }
             }
             if let Some(ref mut ted_client) = self.ted_client {
-                ted_client.update(&mut self.ted);
+                while let Ok(mut packet) = ted_client.client.try_receive() {
+                    ted_client.handle_packet(&mut self.ted, &mut packet);
+                }
             }
         }
     }
@@ -166,7 +173,7 @@ impl Editor {
     }
 
     fn poll_event(&self) -> Option<Event> {
-        match self.rust_box.poll_event(false) {
+        match self.rust_box.peek_event(Duration::milliseconds(0), false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 if let Some(k) = key {
                     match k {
