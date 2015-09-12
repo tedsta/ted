@@ -12,7 +12,7 @@ fn main() {
 
     // Start the server engine thing
     Builder::new().name("server_master".to_string()).spawn(move || {
-        server.listen("localhost:3910");
+        server.listen("0.0.0.0:3910");
     }).unwrap();
 
     // Run the ted server

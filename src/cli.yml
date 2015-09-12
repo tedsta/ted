@@ -1,7 +1,7 @@
-name: yml_app
-version: 1.0
-about: an example using a .yml file to build a CLI
-author: Kevin K. <kbknapp@gmail.com>
+name: ted
+version: 0.1
+about: ted the amazing Text EDitor!
+author: Theodore DeRego <tderego94@gmail.com>
 
 # AppSettings can be defined as a list and are **not** ascii case sensitive
 settings: 
