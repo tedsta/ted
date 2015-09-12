@@ -32,7 +32,7 @@ pub struct TedServer {
 impl TedServer {
     pub fn new(slot: net::ServerSlot) -> TedServer {
         TedServer {
-            ted: Ted::from_file(1, "src/ted.rs".to_string()).unwrap(),
+            ted: Ted::from_string(1, "hello, world!".to_string()),
 
             slot: slot,
 
