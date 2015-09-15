@@ -3,70 +3,10 @@ version: 0.1
 about: ted the amazing Text EDitor!
 author: Theodore DeRego <tderego94@gmail.com>
 
-# AppSettings can be defined as a list and are **not** ascii case sensitive
 settings: 
     - ArgRequiredElseHelp
 
-# All Args must be defined in the 'args:' list where the name of the arg, is the
-# key to a Hash object
-args:
-    # The name of this argument, is 'opt' which will be used to access the value
-    # later in your Rust code
-    - opt:
-        help: example option argument from yaml
-        short: o
-        long: option
-        multiple: true
-        takes_value: true
-    - pos:
-        help: example positional argument from yaml
-        index: 1
-        # A list of possible values can be defined as a list
-        possible_values:
-            - fast
-            - slow
-    - flag:
-        help: demo flag argument
-        short: F
-        multiple: true
-        global: true
-        # Conflicts, mutual overrides, and requirements can all be defined as a
-        # list, where the key is the name of the other argument
-        conflicts_with:
-            - opt
-        requires:
-            - pos
-    - mode:
-        long: mode
-        help: shows an option with specific values
-        # possible_values can also be defined in this list format
-        possible_values: [ vi, emacs ]
-        takes_value: true
-    - mvals:
-        long: mult-vals
-        help: demos an option which has two named values
-        # value names can be described in a list, where the help will be shown
-        # --mult-vals <one> <two>
-        value_names:
-            - one
-            - two
-    - minvals:
-        long: min-vals
-        multiple: true
-        help: you must supply at least two values to satisfy me
-        min_values: 2
-    - maxvals:
-        long: max-vals
-        multiple: true
-        help: you can only supply a max of 3 values for me!
-        max_values: 3
-
-# All subcommands must be listed in the 'subcommand:' object, where the key to
-# the list is the name of the subcommand, and all settings for that command are
-# are part of a Hash object
 subcommands:
-    # The nae of this subcommand will be 'subcmd' which can be accessed in your
-    # Rust code later
     - serve:
         about: Starts a ted server serving the specified file.
         args:
