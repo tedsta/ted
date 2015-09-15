@@ -30,9 +30,9 @@ pub struct TedServer {
 }
 
 impl TedServer {
-    pub fn new(slot: net::ServerSlot) -> TedServer {
+    pub fn new(ted: Ted,slot: net::ServerSlot) -> TedServer {
         TedServer {
-            ted: Ted::from_string(1, "hello, world!".to_string()),
+            ted: ted,
 
             slot: slot,
 

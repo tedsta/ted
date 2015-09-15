@@ -73,3 +73,9 @@ subcommands:
             - file:
                 help: File to open and serve
                 index: 1
+    - connect:
+        about: Starts a ted client connected to the specified server.
+        args:
+            - address:
+                help: IP address of server to connect to. <ip>[:<port>]
+                index: 1

@@ -12,6 +12,7 @@ extern crate time;
 use std::thread::Builder;
 
 use editor::Editor;
+use ted::Ted;
 use ted_server::TedServer;
 
 mod buffer;
@@ -27,16 +28,32 @@ fn main() {
 	let yml = load_yaml!("cli.yml");
     let m = clap::App::from_yaml(yml).get_matches();
 
-    if let Some(mode) = m.value_of("mode") {
-        match mode {
-            "fast" => println!("We're really going now!"),
-            "slow" => println!("Awwww, too slow :("),
-            _      => unreachable!()
-        }
-    } else {
-        println!("--mode <MODE> wasn't used...");
-    }
+    if let Some(ref matches) = m.subcommand_matches("serve") {
+        let ted =
+            match matches.value_of("file") {
+                Some(file) => {
+                    println!("Serving {}", file);
+                    Ted::from_file(1, file.to_string()).unwrap()
+                },
+                None => {
+                    println!("Serving new file");
+                    Ted::new(1)
+                },
+            };
+        let mut server = net::Server::new();
+        let slot = server.create_slot(); // Create default slot
+        let mut ted_server = TedServer::new(ted, slot);
 
-    // Run our client editor
-    Editor::from_string("fooobarrrr\nyumm I like cheese\ncheese loves me too <3.".to_string()).run();
+        // Start the server engine thing
+        Builder::new().name("server_master".to_string()).spawn(move || {
+            server.listen("0.0.0.0:3910");
+        }).unwrap();
+
+        // Run the ted server
+        ted_server.run();
+    } else if let Some(ref matches) = m.subcommand_matches("connect") {
+        // Run our client editor
+        // address is required
+        Editor::from_server(matches.value_of("address").unwrap()).unwrap().run();
+    }
 }
