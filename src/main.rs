@@ -8,14 +8,17 @@ extern crate bincode;
 extern crate rustc_serialize;
 extern crate rustbox;
 extern crate time;
+extern crate trie;
 
 use std::thread::Builder;
 
+use buffer_operator::BufferOperator;
 use editor::Editor;
 use ted::Ted;
 use ted_server::TedServer;
 
 mod buffer;
+mod buffer_operator;
 mod cursor;
 mod editor;
 mod net;
@@ -29,20 +32,20 @@ fn main() {
     let m = clap::App::from_yaml(yml).get_matches();
 
     if let Some(ref matches) = m.subcommand_matches("serve") {
-        let ted =
+        let buf_op =
             match matches.value_of("file") {
                 Some(file) => {
                     println!("Serving {}", file);
-                    Ted::from_file(1, file.to_string()).unwrap()
+                    BufferOperator::from_file(file.to_string()).unwrap()
                 },
                 None => {
                     println!("Serving new file");
-                    Ted::new(1)
+                    BufferOperator::new()
                 },
             };
         let mut server = net::Server::new();
         let slot = server.create_slot(); // Create default slot
-        let mut ted_server = TedServer::new(ted, slot);
+        let mut ted_server = TedServer::new(buf_op, slot);
 
         // Start the server engine thing
         Builder::new().name("server_master".to_string()).spawn(move || {

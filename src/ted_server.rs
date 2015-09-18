@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use buffer_operator::BufferOperator;
 use net;
 use operation::{OpCoords, Operation};
-use ted::Ted;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request {
@@ -21,7 +21,7 @@ pub enum PacketId {
 }
 
 pub struct TedServer {
-    ted: Ted,
+    buf_op: BufferOperator,
     
     slot: net::ServerSlot,
     
@@ -30,9 +30,9 @@ pub struct TedServer {
 }
 
 impl TedServer {
-    pub fn new(ted: Ted,slot: net::ServerSlot) -> TedServer {
+    pub fn new(buf_op: BufferOperator, slot: net::ServerSlot) -> TedServer {
         TedServer {
-            ted: ted,
+            buf_op: buf_op,
 
             slot: slot,
 
@@ -50,7 +50,7 @@ impl TedServer {
 
                     // Send the current buffer and timeline
                     let mut packet: net::OutPacket = net::OutPacket::new();
-                    packet.write(&self.ted.buffer(0).unwrap().buffer());
+                    packet.write(&self.buf_op.buffer(0).unwrap().buffer());
                     packet.write(&self.timeline);
                     self.slot.send(client_id, packet);
                 },
@@ -99,7 +99,7 @@ impl TedServer {
 
             // Do and send the response
             if op_success {
-                self.ted.do_operation(&op);
+                self.buf_op.do_operation(&op);
                 self.timeline.push((client_id, op));
 
                 let response = Response::Op;

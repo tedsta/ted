@@ -1,12 +1,8 @@
 use std::fs::File;
 use std::io;
-use std::io::{
-    Read,
-    BufReader,
-};
-use std::collections::VecDeque;
 
 use buffer::Buffer;
+use buffer_operator::BufferOperator;
 use cursor::Cursor;
 use operation::Operation;
 
@@ -30,14 +26,13 @@ pub struct Ted {
     pub height: u64,
     pub cursor: Cursor,
 
-    buffers: Vec<Buffer>,
+    buf_op: BufferOperator,
 
     pub log: Vec<Operation>,
     log_index: usize, // Current position in the log from undoing/redoing
 
     pub dirty: bool,
     running: bool,
-    file_path: Option<String>,
 }
 
 impl Ted {
@@ -48,14 +43,13 @@ impl Ted {
             height: height,
             cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
-            buffers: vec![Buffer::new(), Buffer::new()],
+            buf_op: BufferOperator::new(),
             
             log: Vec::new(),
             log_index: 0,
 
             dirty: true,
             running: true,
-            file_path: None,
         }
     }
 
@@ -66,37 +60,30 @@ impl Ted {
             height: height,
             cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
-            buffers: vec![Buffer::from_string(text), Buffer::new()],
+            buf_op: BufferOperator::from_string(text),
             
             log: Vec::new(),
             log_index: 0,
 
             dirty: true,
             running: true,
-            file_path: None,
         }
     }
 
     pub fn from_file(height: u64, path: String) -> io::Result<Ted> {
-        // Read the file into file_contents
-        let mut file = BufReader::new(try!(File::open(path.as_str())));
-        let mut file_contents = String::new();
-        try!(file.read_to_string(&mut file_contents));
-
         Ok(Ted {
             mode: Mode::Normal,
             scroll: 0,
             height: height,
             cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
-            buffers: vec![Buffer::from_string(file_contents), Buffer::new()],
+            buf_op: try!(BufferOperator::from_file(path)),
             
             log: Vec::new(),
             log_index: 0,
 
             dirty: true,
             running: true,
-            file_path: Some(path),
         })
     }
 
@@ -156,27 +143,28 @@ impl Ted {
             },
             Event::Backspace => {
                 if self.cursor.buf_index > 0 {
-                    if self.cursor.buf_index == self.buffers[0]
+                    if self.cursor.buf_index == self.buffer(0)
+                                                    .unwrap()
                                                     .line_info()[self.cursor.line as usize]
                                                     .buf_index as u64 {
                         // Handle special newline case
                         self.cursor.buf_index -= 1;
                         self.cursor.line -= 1;
                         self.cursor.column =
-                            self.buffers[0].line_info()[self.cursor.line as usize].length as u64;
+                            self.buffer(0).unwrap().line_info()[self.cursor.line as usize].length as u64;
                     } else {
-                        self.cursor.move_left(&self.buffers[0]);
+                        self.cursor.move_left(self.buf_op.buffer(0).unwrap());
                     }
 
                     let index = self.cursor.buf_index;
 
-                    let op = self.remove_char(index);
+                    let op = self.buf_op.remove_char(index);
                     self.log(op);
                 }
             },
             Event::Enter => {
                 let index = self.cursor.buf_index;
-                let op = self.insert_char(index, '\n');
+                let op = self.buf_op.insert_char(index, '\n');
                 self.log(op);
                 self.cursor.column = 0;
                 self.cursor.line += 1;
@@ -184,7 +172,7 @@ impl Ted {
             },
             Event::Char(c) => {
                 let index = self.cursor.buf_index;
-                let op = self.insert_char(index, c);
+                let op = self.buf_op.insert_char(index, c);
                 self.log(op);
                 self.cursor.column += 1;
                 self.cursor.buf_index += 1;
@@ -196,21 +184,21 @@ impl Ted {
     fn command_handle_event(&mut self, e: Event) {
         match e {
             Event::Backspace => {
-                if self.buffers[1].len() > 0 {
-                    let end = self.buffers[1].len()-1;
-                    self.buffers[1].remove(end, end);
+                if self.buffer(1).unwrap().len() > 0 {
+                    let end = self.buffer(1).unwrap().len()-1;
+                    self.buffer_mut(1).unwrap().remove(end, end);
                     self.dirty = true;
                 }
             },
             Event::Char(c) => {
-                let end = self.buffers[1].len();
-                self.buffers[1].insert(end, format!("{}", c).as_str());
+                let end = self.buffer(1).unwrap().len();
+                self.buffer_mut(1).unwrap().insert(end, format!("{}", c).as_str());
                 self.dirty = true;
             },
             Event::Enter => {
-                let command = self.buffers[1].buffer().clone();
+                let command = self.buffer(1).unwrap().buffer().clone();
                 self.execute_command(command);
-                self.buffers[1].clear();
+                self.buffer_mut(1).unwrap().clear();
                 self.mode = Mode::Normal;
                 self.dirty = true;
             },
@@ -236,60 +224,35 @@ impl Ted {
     }
 
     pub fn buffer(&self, index: usize) -> Option<&Buffer> {
-        self.buffers.get(index)
+        self.buf_op.buffer(index)
     }
     
     pub fn buffer_mut(&mut self, index: usize) -> Option<&mut Buffer> {
-        self.buffers.get_mut(index)
+        self.buf_op.buffer_mut(index)
     }
 
     pub fn running(&self) -> bool {
         self.running
     }
 
+    pub fn is_dirty(&self) -> bool {
+        self.dirty || self.buf_op.dirty
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Operation stuff
 
     pub fn do_operation(&mut self, operation: &Operation) {
-        match *operation {
-            Operation::InsertChar(index, c) => { self.buffers[0].insert_char(index as usize, c); },
-            Operation::Insert(index, ref text) => { self.buffers[0].insert(index as usize, text.as_str()); },
-            Operation::RemoveChar(index, _) => { self.buffers[0].remove_char(index as usize); },
-            Operation::Remove(start, end, _) => { self.buffers[0].remove(start as usize, end as usize); },
-        }
-        self.dirty = true;
-        self.cursor.op_adjust_cursor(&self.buffers[0], operation);
+        self.buf_op.do_operation(operation);
+        self.cursor.op_adjust_cursor(self.buf_op.buffer(0).unwrap(), operation);
     }
 
-    pub fn insert_char(&mut self, index: u64, c: char) -> Operation {
-        self.dirty = true;
-        self.buffers[0].insert_char(index as usize, c);
-        Operation::InsertChar(index, c)
-    }
-
-    pub fn insert(&mut self, index: u64, text: String) -> Operation {
-        self.dirty = true;
-        self.buffers[0].insert(index as usize, text.as_str());
-        Operation::Insert(index, text)
-    }
-
-    pub fn remove_char(&mut self, index: u64) -> Operation {
-        self.dirty = true;
-        let c = self.buffers[0].remove_char(index as usize);
-        Operation::RemoveChar(index, c)
-    }
-
-    pub fn remove(&mut self, from: u64, to: u64) -> Operation {
-        self.dirty = true;
-        let text = self.buffers[0].remove(from as usize, to as usize);
-        Operation::Remove(from, to, text)
-    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Cursor movement
 
     fn cursor_up(&mut self) {
-        self.cursor.move_up(&self.buffers[0]);
+        self.cursor.move_up(self.buf_op.buffer(0).unwrap());
         if self.scroll > self.cursor.line {
             self.scroll = self.cursor.line;
         }
@@ -297,7 +260,7 @@ impl Ted {
     }
 
     fn cursor_down(&mut self) {
-        self.cursor.move_down(&self.buffers[0]);
+        self.cursor.move_down(self.buf_op.buffer(0).unwrap());
         if self.scroll+self.height <= self.cursor.line {
             self.scroll = self.cursor.line - (self.height-1);
         }
@@ -305,7 +268,7 @@ impl Ted {
     }
 
     fn cursor_left(&mut self) {
-        self.cursor.move_left(&self.buffers[0]);
+        self.cursor.move_left(self.buf_op.buffer(0).unwrap());
         if self.scroll > self.cursor.line {
             self.scroll = self.cursor.line;
         }
@@ -313,7 +276,7 @@ impl Ted {
     }
 
     fn cursor_right(&mut self) {
-        self.cursor.move_right(&self.buffers[0]);
+        self.cursor.move_right(self.buf_op.buffer(0).unwrap());
         if self.scroll+self.height <= self.cursor.line {
             self.scroll = self.cursor.line - (self.height-1);
         }

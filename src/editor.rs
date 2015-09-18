@@ -99,7 +99,7 @@ impl Editor {
 
     pub fn run(&mut self) {
         while self.ted.running() {
-            if self.ted.dirty {
+            if self.ted.is_dirty() {
                 // Redraw screen if ted is dirty
                 self.present();
             }

@@ -5,10 +5,12 @@ extern crate bincode;
 extern crate rustc_serialize;
 extern crate rustbox;
 extern crate time;
+extern crate trie;
 
 pub use ted::*;
 
 pub mod buffer;
+pub mod buffer_operator;
 pub mod cursor;
 pub mod editor;
 pub mod net;
