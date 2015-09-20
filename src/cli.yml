@@ -3,8 +3,10 @@ version: 0.1
 about: ted the amazing Text EDitor!
 author: Theodore DeRego <tderego94@gmail.com>
 
-settings: 
-    - ArgRequiredElseHelp
+args:
+    - file:
+        help: File to open
+        index: 1
 
 subcommands:
     - serve:

@@ -58,5 +58,14 @@ fn main() {
         // Run our client editor
         // address is required
         Editor::from_server(matches.value_of("address").unwrap()).unwrap().run();
+    } else {
+        match m.value_of("file") {
+            Some(file_path) => {
+                Editor::from_file(file_path.to_string()).unwrap().run();
+            },
+            None => {
+                Editor::new().run();
+            },
+        }
     }
 }

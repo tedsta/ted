@@ -65,11 +65,10 @@ impl Editor {
             };
 
         let ted = try!(Ted::from_file((rust_box.height()-2) as u64, path));
-        let client = net::Client::new("127.0.0.1:3910");
 
         Ok(Editor {
             ted: ted,
-            ted_client: Some(TedClient::new(client)),
+            ted_client: None,
             rust_box: rust_box,
             left_column: 3,
             right_column: 3,
