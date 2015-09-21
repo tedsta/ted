@@ -64,7 +64,8 @@ fn main() {
                 Editor::from_file(file_path.to_string()).unwrap().run();
             },
             None => {
-                Editor::new().run();
+                let mut editor = Editor::new();
+                editor.run();
             },
         }
     }

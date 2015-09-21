@@ -8,7 +8,7 @@ impl Buffer {
     pub fn new() -> Buffer {
         Buffer {
             buf: "".to_string(),
-            line_info: Vec::new(),
+            line_info: build_line_info(""),
         }
     }
 
@@ -87,7 +87,7 @@ impl Buffer {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct LineInfo {
     pub buf_index: usize,
     pub length: usize,
@@ -105,17 +105,17 @@ impl LineInfo {
 
 fn build_line_info(text: &str) -> Vec<LineInfo> {
     let mut line_info = Vec::new();
-    let mut last_index = 0;
+    let mut next_line_start = 0;
     for (i, c) in text.chars().enumerate() {
         if c == '\n' {
             // Note '\n' not included in line_size
-            let length = i - last_index;
-            line_info.push(LineInfo { buf_index: last_index, length: length });
-            last_index = i+1;
+            let length = i - next_line_start;
+            line_info.push(LineInfo { buf_index: next_line_start, length: length });
+            next_line_start = i+1;
         }
     }
-    let length = text.len() - last_index;
-    line_info.push(LineInfo { buf_index: last_index, length: length });
+    let length = text.len() - next_line_start;
+    line_info.push(LineInfo { buf_index: next_line_start, length: length });
     line_info
 }
 
