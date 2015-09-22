@@ -42,9 +42,9 @@ impl TedClient {
     }
 
     pub fn send_operations(&mut self, ted: &mut Ted) {
-        for i in self.op_queue..ted.log.len() {
+        for op in &ted.log[self.op_queue..] {
             // TODO: Optimize, I shouldn't have to clone
-            self.send_operation(i, ted.log[i].clone());
+            self.send_operation(op.clone());
         }
         self.op_queue = ted.log.len();
     }
@@ -73,7 +73,7 @@ impl TedClient {
     fn handle_sync_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {
         let num_ops: u64 = packet.read().unwrap();
         for _ in 0..num_ops {
-            let mut op = packet.read().unwrap();
+            let op = packet.read().unwrap();
             self.timeline.push(op);
         }
 
@@ -82,9 +82,9 @@ impl TedClient {
         self.last_sync = self.timeline.len();
     }
 
-    fn send_operation(&mut self, op_index: usize, op: Operation) {
+    fn send_operation(&mut self, op: Operation) {
         let mut packet = net::OutPacket::new();
-        packet.write(&Request::Op(self.timeline.len() as u64, op));
+        packet.write(&Request::Op(self.timeline.len() as u64, op)).unwrap();
         self.client.send(&packet);
     }
 

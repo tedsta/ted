@@ -1,8 +1,9 @@
 use std::fs::File;
 use std::io;
 use std::io::{
-    Read,
     BufReader,
+    Read,
+    Write,
 };
 
 use buffer::Buffer;
@@ -12,7 +13,7 @@ pub struct BufferOperator {
     buffers: Vec<Buffer>,
 
     pub dirty: bool,
-    file_path: Option<String>,
+    pub file_path: Option<String>,
 }
 
 impl BufferOperator {
@@ -46,6 +47,19 @@ impl BufferOperator {
             dirty: true,
             file_path: Some(path),
         })
+    }
+
+    pub fn write_file(&self) -> Result<(), String> {
+        match self.file_path {
+            Some(ref path) => {
+                let mut file =
+                    try!(File::open(path.as_str())
+                            .map_err(|e| format!("Failed to open buffer's file: {}", e)));
+                file.write_all(self.buffers[0].buffer().as_bytes());
+                Ok(())
+            },
+            None => Err("Buffer file_path is None".to_string()),
+        }
     }
 
     pub fn buffer(&self, index: usize) -> Option<&Buffer> {

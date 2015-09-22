@@ -50,8 +50,8 @@ impl TedServer {
 
                     // Send the current buffer and timeline
                     let mut packet: net::OutPacket = net::OutPacket::new();
-                    packet.write(&self.buf_op.buffer(0).unwrap().buffer());
-                    packet.write(&self.timeline);
+                    packet.write(&self.buf_op.buffer(0).unwrap().buffer()).unwrap();
+                    packet.write(&self.timeline).unwrap();
                     self.slot.send(client_id, packet);
                 },
                 net::SlotInMsg::Disconnected(client_id) => {
@@ -104,8 +104,8 @@ impl TedServer {
 
                 let response = Response::Op;
                 let mut packet = net::OutPacket::new();
-                packet.write(&PacketId::Response);
-                packet.write(&response);
+                packet.write(&PacketId::Response).unwrap();
+                packet.write(&response).unwrap();
                 self.slot.send(client_id, packet);
             }
 
@@ -120,17 +120,17 @@ impl TedServer {
         let client_data = self.client_data.get_mut(&client_id).unwrap();
         if client_data.version < self.timeline.len() as u64 {
             let mut packet = net::OutPacket::new();
-            packet.write(&PacketId::Sync);
+            packet.write(&PacketId::Sync).unwrap();
 
             // Write all of the operations that happened since last sync
             let merge_start = client_data.version as usize;
             let merge_end = self.timeline.len();
 
             println!("syncing {} ops", merge_end-merge_start);
-            packet.write(&((merge_end - merge_start) as u64)); // Write the number of operations
+            packet.write(&((merge_end - merge_start) as u64)).unwrap(); // Write the number of operations
 
             for &(_, ref timeline_op) in &self.timeline[merge_start..merge_end] {
-                packet.write(timeline_op);
+                packet.write(timeline_op).unwrap();
             }
 
             self.slot.send(client_id, packet);
@@ -146,17 +146,17 @@ impl TedServer {
             }
             if client_data.version < self.timeline.len() as u64 {
                 let mut packet = net::OutPacket::new();
-                packet.write(&PacketId::Sync);
+                packet.write(&PacketId::Sync).unwrap();
 
                 // Write all of the operations that happened since last sync
                 let merge_start = client_data.version as usize;
                 let merge_end = self.timeline.len();
 
                 println!("syncing {} ops", merge_end-merge_start);
-                packet.write(&((merge_end - merge_start) as u64)); // Write the number of operations
+                packet.write(&((merge_end - merge_start) as u64)).unwrap(); // Write the number of operations
 
                 for &(_, ref timeline_op) in &self.timeline[merge_start..merge_end] {
-                    packet.write(timeline_op);
+                    packet.write(timeline_op).unwrap();
                 }
 
                 self.slot.send(*client_id, packet);
