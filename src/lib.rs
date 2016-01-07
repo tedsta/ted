@@ -5,7 +5,6 @@ extern crate bincode;
 extern crate rustc_serialize;
 extern crate rustbox;
 extern crate time;
-extern crate trie;
 
 pub use ted::*;
 

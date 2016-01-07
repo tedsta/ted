@@ -105,6 +105,7 @@ impl Editor {
             if let Some(e) = self.poll_event() {
                 self.ted.handle_event(e);
                 if let Some(ref mut ted_client) = self.ted_client {
+                    ted_client.send_commands(&mut self.ted);
                     ted_client.send_operations(&mut self.ted);
                 }
             }

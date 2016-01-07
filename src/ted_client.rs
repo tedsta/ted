@@ -16,6 +16,7 @@ pub struct TedClient {
     pending_queue: usize,
 
     op_queue: usize, // Start index in ted.log of ops that need to be sent to the server
+    cmd_queue: usize,
 }
 
 impl TedClient {
@@ -26,6 +27,7 @@ impl TedClient {
             last_sync: 0,
             pending_queue: 0,
             op_queue: 0,
+            cmd_queue: 0,
         }
     }
     
@@ -45,6 +47,14 @@ impl TedClient {
         for op in &ted.log[self.op_queue..] {
             // TODO: Optimize, I shouldn't have to clone
             self.send_operation(op.clone());
+        }
+        self.op_queue = ted.log.len();
+    }
+
+    pub fn send_commands(&mut self, ted: &mut Ted) {
+        for cmd in &ted.cmd_log[self.cmd_queue..] {
+            // TODO: I shouldn't have to clone
+            self.send_command(cmd.clone());
         }
         self.op_queue = ted.log.len();
     }
@@ -85,6 +95,12 @@ impl TedClient {
     fn send_operation(&mut self, op: Operation) {
         let mut packet = net::OutPacket::new();
         packet.write(&Request::Op(self.timeline.len() as u64, op)).unwrap();
+        self.client.send(&packet);
+    }
+
+    fn send_command(&mut self, cmd: String) {
+        let mut packet = net::OutPacket::new();
+        packet.write(&Request::Command(self.timeline.len() as u64, cmd)).unwrap();
         self.client.send(&packet);
     }
 

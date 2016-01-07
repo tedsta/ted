@@ -6,7 +6,6 @@ authors = ["Theodore DeRego <tderego94@gmail.com>"]
 [dependencies]
 bincode = "0.3.0"
 rustc-serialize = "0.3.*"
-rustbox = "0.6.3"
+rustbox = "0.7.2"
 clap = { version = "1.4.0", features = ["yaml"] }
 time = "*"
-trie = "*"

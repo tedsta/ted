@@ -7,6 +7,7 @@ use operation::{OpCoords, Operation};
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request {
     Op(u64, Operation), // Op(client_version, op_id, op)
+    Command(u64, String), // Command(client_version, op_id, op)
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -70,6 +71,8 @@ impl TedServer {
         match packet {
             Request::Op(client_version, op) => {
                 self.process_operation(client_id, client_version, op);
+            },
+            Request::Command(client_version, cmd) => {
             },
         }
     }

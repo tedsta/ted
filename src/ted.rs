@@ -30,6 +30,8 @@ pub struct Ted {
     pub log: Vec<Operation>,
     log_index: usize, // Current position in the log from undoing/redoing
 
+    pub cmd_log: Vec<String>,
+
     pub dirty: bool,
     running: bool,
 }
@@ -46,6 +48,8 @@ impl Ted {
             
             log: Vec::new(),
             log_index: 0,
+
+            cmd_log: Vec::new(),
 
             dirty: true,
             running: true,
@@ -64,6 +68,8 @@ impl Ted {
             log: Vec::new(),
             log_index: 0,
 
+            cmd_log: Vec::new(),
+
             dirty: true,
             running: true,
         }
@@ -81,6 +87,8 @@ impl Ted {
             log: Vec::new(),
             log_index: 0,
 
+            cmd_log: Vec::new(),
+
             dirty: true,
             running: true,
         })
@@ -94,10 +102,12 @@ impl Ted {
         }
     }
 
-    pub fn execute_command(&mut self, command: String) {
-        if command == "q" {
+    pub fn execute_command(&mut self, cmd: String) {
+        if cmd == "q" {
             self.running = false;
         }
+
+        self.cmd_log.push(cmd);
     }
 
     // Normal mode handle event
