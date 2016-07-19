@@ -121,7 +121,7 @@ fn build_line_info(text: &str) -> Vec<LineInfo> {
 
 #[test]
 fn buffer_insert_no_lines() {
-    let mut buf = Buffer::from_str("helloworld!\nbye");
+    let mut buf = Buffer::from_string("helloworld!\nbye".to_string());
     buf.insert(5, ", ");
 
     assert!(buf.buf.as_str() == "hello, world!\nbye");
@@ -131,7 +131,7 @@ fn buffer_insert_no_lines() {
 
 #[test]
 fn buffer_insert_two_lines() {
-    let mut buf = Buffer::from_str("hello\nbye");
+    let mut buf = Buffer::from_string("hello\nbye".to_string());
     buf.insert(5, "s\nworld");
 
     assert!(buf.buf.as_str() == "hellos\nworld\nbye");
@@ -142,7 +142,7 @@ fn buffer_insert_two_lines() {
 
 #[test]
 fn buffer_remove_same_line() {
-    let mut buf = Buffer::from_str("hello, world!\nbye");
+    let mut buf = Buffer::from_string("hello, world!\nbye".to_string());
     let removed = buf.remove(5, 6);
 
     assert!(buf.buf.as_str() == "helloworld!\nbye");
@@ -153,7 +153,7 @@ fn buffer_remove_same_line() {
 
 #[test]
 fn buffer_remove_two_lines() {
-    let mut buf = Buffer::from_str("hello, world!\nbye");
+    let mut buf = Buffer::from_string("hello, world!\nbye".to_string());
     let removed = buf.remove(5, 15);
 
     assert!(buf.buf.as_str() == "helloe");
@@ -163,7 +163,7 @@ fn buffer_remove_two_lines() {
 
 #[test]
 fn buffer_remove_multi_line() {
-    let mut buf = Buffer::from_str("hello, world!\nbye\nhola");
+    let mut buf = Buffer::from_string("hello, world!\nbye\nhola".to_string());
     let removed = buf.remove(5, 19);
 
     assert!(buf.buf.as_str() == "hellola");
