@@ -47,7 +47,7 @@ impl TedServer {
             match self.slot.receive() {
                 net::SlotInMsg::Joined(client_id) => {
                     println!("Client {} joined", client_id);
-                    self.client_data.insert(client_id, ClientData::new(self.timeline.len() as u64, 0.25));
+                    self.client_data.insert(client_id, ClientData::new(self.timeline.len() as u64));
 
                     // Send the current buffer and timeline
                     let mut packet: net::OutPacket = net::OutPacket::new();
@@ -172,14 +172,12 @@ impl TedServer {
 
 struct ClientData {
     version: u64,
-    send_rate: f64,
 }
 
 impl ClientData {
-    fn new(version: u64, send_rate: f64) -> ClientData {
+    fn new(version: u64) -> ClientData {
         ClientData {
             version: version,
-            send_rate: send_rate,
         }
     }
 }

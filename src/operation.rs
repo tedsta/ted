@@ -1,4 +1,3 @@
-use cursor::Cursor;
 use self::Operation::*;
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable)]

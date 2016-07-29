@@ -1,6 +1,3 @@
-#![feature(convert)]
-#![feature(drain)]
-
 #[macro_use]
 extern crate clap;
 
