@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::io;
 
@@ -45,16 +46,14 @@ impl TedClient {
 
     pub fn send_operations(&mut self, ted: &mut Ted) {
         for op in &ted.log[self.op_queue..] {
-            // TODO: Optimize, I shouldn't have to clone
-            self.send_operation(op.clone());
+            self.send_operation(op);
         }
         self.op_queue = ted.log.len();
     }
 
     pub fn send_commands(&mut self, ted: &mut Ted) {
         for cmd in &ted.cmd_log[self.cmd_queue..] {
-            // TODO: I shouldn't have to clone
-            self.send_command(cmd.clone());
+            self.send_command(cmd);
         }
         self.op_queue = ted.log.len();
     }
@@ -92,15 +91,15 @@ impl TedClient {
         self.last_sync = self.timeline.len();
     }
 
-    fn send_operation(&mut self, op: Operation) {
+    fn send_operation(&mut self, op: &Operation) {
         let mut packet = net::OutPacket::new();
-        packet.write(&Request::Op(self.timeline.len() as u64, op)).unwrap();
+        packet.write(&Request::Op(self.timeline.len() as u64, Cow::Borrowed(op))).unwrap();
         self.client.send(&packet);
     }
 
-    fn send_command(&mut self, cmd: String) {
+    fn send_command(&mut self, cmd: &String) {
         let mut packet = net::OutPacket::new();
-        packet.write(&Request::Command(self.timeline.len() as u64, cmd)).unwrap();
+        packet.write(&Request::Command(self.timeline.len() as u64, Cow::Borrowed(cmd))).unwrap();
         self.client.send(&packet);
     }
 
