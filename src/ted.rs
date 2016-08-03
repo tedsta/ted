@@ -1,4 +1,7 @@
-use std::io;
+use std::io::{self, Write};
+use std::fs::File;
+use std::path::Path;
+use std::fmt::Display;
 
 use buffer::Buffer;
 use buffer_operator::BufferOperator;
@@ -20,6 +23,7 @@ pub enum Event {
 }
 
 pub struct Ted {
+    path: Option<String>,
     mode: Mode,
     pub scroll: u64,
     pub height: u64,
@@ -39,6 +43,8 @@ pub struct Ted {
 impl Ted {
     pub fn new(height: u64) -> Ted {
         Ted {
+            path: None,
+            
             mode: Mode::Normal,
             scroll: 0,
             height: height,
@@ -58,6 +64,8 @@ impl Ted {
 
     pub fn from_string(height: u64, text: String) -> Ted {
         Ted {
+            path: None,
+
             mode: Mode::Normal,
             scroll: 0,
             height: height,
@@ -77,6 +85,8 @@ impl Ted {
 
     pub fn from_file(height: u64, path: String) -> io::Result<Ted> {
         Ok(Ted {
+            path: Some(path.clone()),
+
             mode: Mode::Normal,
             scroll: 0,
             height: height,
@@ -103,8 +113,24 @@ impl Ted {
     }
 
     pub fn execute_command(&mut self, cmd: String) {
+        let cmd_split: Vec<String> = cmd.split(" ").map(|s| s.to_owned()).collect();
+
         if cmd == "q" {
             self.running = false;
+        }
+
+        if cmd_split[0] == "w" {
+            // Write command
+            if cmd_split.len() >= 2 {
+                // User supplied a file
+                self.path = Some(cmd_split[1].clone());
+                self.save(&cmd_split[1]);
+            } else {
+                // User didn't supply a file to write to
+                if let Some(ref path) = self.path {
+                    self.save(path);
+                }
+            }
         }
 
         self.cmd_log.push(cmd);
@@ -216,6 +242,16 @@ impl Ted {
                 self.dirty = true;
             }
         }
+    }
+
+    pub fn save<P: AsRef<Path>>(&self, path: &P) {
+        // Open the path in read-only mode, returns `io::Result<File>`
+        let mut file = match File::create(path) {
+            Err(why) => panic!("couldn't open {}: {}", path.as_ref().display(), why),
+            Ok(file) => file,
+        };
+
+        file.write_all(&self.buf_op.buffer(0).unwrap().buffer().as_bytes());
     }
 
     pub fn log(&mut self, operation: Operation) {
