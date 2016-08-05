@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::Cell;
 use std::collections::HashMap;
 
 use buffer_operator::BufferOperator;
@@ -113,21 +114,34 @@ impl TedServer {
                 self.slot.send(client_id, packet);
             }
 
-            client_data.version = self.timeline.len() as u64;
+            client_data.version.set(self.timeline.len() as u64);
         }
 
         // Sync all the other clients now
         self.sync_all_clients(Some(client_id));
     }
 
-    fn sync_client(&mut self, client_id: net::ClientId) {
-        let client_data = self.client_data.get_mut(&client_id).unwrap();
-        if client_data.version < self.timeline.len() as u64 {
+    fn sync_client(&self, client_id: net::ClientId) {
+        let client_data = self.client_data.get(&client_id).unwrap();
+        self._sync_client(client_id, client_data);
+    }
+
+    fn sync_all_clients(&mut self, exclude: Option<net::ClientId>) {
+        for (client_id, client_data) in &self.client_data {
+            if let Some(exclude) = exclude {
+                if exclude == *client_id { continue; }
+            }
+            self._sync_client(*client_id, client_data);
+        }
+    }
+
+    fn _sync_client(&self, client_id: net::ClientId, client_data: &ClientData) {
+        if client_data.version.get() < self.timeline.len() as u64 {
             let mut packet = net::OutPacket::new();
             packet.write(&PacketId::Sync).unwrap();
 
             // Write all of the operations that happened since last sync
-            let merge_start = client_data.version as usize;
+            let merge_start = client_data.version.get() as usize;
             let merge_end = self.timeline.len();
 
             println!("syncing {} ops", merge_end-merge_start);
@@ -139,46 +153,19 @@ impl TedServer {
 
             self.slot.send(client_id, packet);
 
-            client_data.version = self.timeline.len() as u64;
-        }
-    }
-
-    fn sync_all_clients(&mut self, exclude: Option<net::ClientId>) {
-        for (client_id, client_data) in &mut self.client_data {
-            if let Some(exclude) = exclude {
-                if exclude == *client_id { continue; }
-            }
-            if client_data.version < self.timeline.len() as u64 {
-                let mut packet = net::OutPacket::new();
-                packet.write(&PacketId::Sync).unwrap();
-
-                // Write all of the operations that happened since last sync
-                let merge_start = client_data.version as usize;
-                let merge_end = self.timeline.len();
-
-                println!("syncing {} ops", merge_end-merge_start);
-                packet.write(&((merge_end - merge_start) as u64)).unwrap(); // Write the number of operations
-
-                for &(_, ref timeline_op) in &self.timeline[merge_start..merge_end] {
-                    packet.write(timeline_op).unwrap();
-                }
-
-                self.slot.send(*client_id, packet);
-
-                client_data.version = self.timeline.len() as u64;
-            }
+            client_data.version.set(self.timeline.len() as u64);
         }
     }
 }
 
 struct ClientData {
-    version: u64,
+    version: Cell<u64>,
 }
 
 impl ClientData {
     fn new(version: u64) -> ClientData {
         ClientData {
-            version: version,
+            version: Cell::new(version),
         }
     }
 }
