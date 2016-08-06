@@ -53,7 +53,7 @@ impl TedServer {
 
                     // Send the current buffer and timeline
                     let mut packet: net::OutPacket = net::OutPacket::new();
-                    packet.write(&self.buf_op.buffer(0).unwrap().buffer()).unwrap();
+                    packet.write(&self.buf_op.buffer().buffer()).unwrap();
                     packet.write(&self.timeline).unwrap();
                     self.slot.send(client_id, packet);
                 },

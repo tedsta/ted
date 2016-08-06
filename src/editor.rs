@@ -126,17 +126,16 @@ impl Editor {
         self.rust_box.clear();
 
         // Draw main text
-        if let Some(text) = self.ted.buffer(0) {
-            for i in (self.ted.scroll..cmp::min(text.line_count() as u64, self.ted.scroll+self.ted.height)) {
-                self.rust_box.print(self.left_column, (i - self.ted.scroll) as usize,
-                                    rustbox::RB_BOLD, Color::White, Color::Default,
-                                    text.line(i as usize));
-            }
+        let text = self.ted.buffer();
+        for i in (self.ted.scroll..cmp::min(text.line_count() as u64, self.ted.scroll+self.ted.height)) {
+            self.rust_box.print(self.left_column, (i - self.ted.scroll) as usize,
+                                rustbox::RB_BOLD, Color::White, Color::Default,
+                                text.line(i as usize));
         }
 
         // Draw command
         if self.ted.mode() == Mode::Command {
-            if let Some(command) = self.ted.buffer(1) {
+            if let Some(command) = self.ted.aux_buffer(1) {
                 self.rust_box.print(0, (self.ted.height + 1) as usize,
                                     rustbox::RB_BOLD, Color::White, Color::Default, ":");
                 self.rust_box.print(1, (self.ted.height + 1) as usize,
@@ -165,7 +164,7 @@ impl Editor {
         }
 
         // Draw the cursor
-        let (cursor_x, cursor_y) = self.ted.cursor.get_display_xy(self.ted.buffer(0).unwrap());
+        let (cursor_x, cursor_y) = self.ted.cursor.get_display_xy(self.ted.buffer());
         self.rust_box.set_cursor((cursor_x as usize + self.left_column) as isize,
                                  (cursor_y - self.ted.scroll) as isize);
 
