@@ -214,7 +214,7 @@ impl Ted {
         }
     }
 
-    // Operation mode handle event
+    // Command mode handle event
     fn command_handle_event(&mut self, e: Event) {
         match e {
             Event::Backspace => {
