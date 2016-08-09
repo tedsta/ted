@@ -127,7 +127,7 @@ impl Editor {
 
         // Draw main text
         let text = self.ted.buffer();
-        for i in (self.ted.scroll..cmp::min(text.line_count() as u64, self.ted.scroll+self.ted.height)) {
+        for i in self.ted.scroll..cmp::min(text.line_count() as u64, self.ted.scroll+self.ted.height) {
             self.rust_box.print(self.left_column, (i - self.ted.scroll) as usize,
                                 rustbox::RB_BOLD, Color::White, Color::Default,
                                 text.line(i as usize));

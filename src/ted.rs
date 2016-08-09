@@ -1,7 +1,6 @@
 use std::io::{self, Write};
 use std::fs::File;
 use std::path::Path;
-use std::fmt::Display;
 
 use buffer::Buffer;
 use buffer_operator::BufferOperator;
@@ -128,7 +127,8 @@ impl Ted {
             } else {
                 // User didn't supply a file to write to
                 if let Some(ref path) = self.path {
-                    self.save(path);
+                    // TODO: Display error message rather than panicing if save fails
+                    self.save(path).unwrap();
                 }
             }
         }
@@ -243,14 +243,14 @@ impl Ted {
         }
     }
 
-    pub fn save<P: AsRef<Path>>(&self, path: &P) {
+    pub fn save<P: AsRef<Path>>(&self, path: &P) -> io::Result<()> {
         // Open the path in read-only mode, returns `io::Result<File>`
         let mut file = match File::create(path) {
             Err(why) => panic!("couldn't open {}: {}", path.as_ref().display(), why),
             Ok(file) => file,
         };
 
-        file.write_all(&self.buf_op.buffer().buffer().as_bytes());
+        file.write_all(&self.buf_op.buffer().buffer().as_bytes())
     }
 
     pub fn log(&mut self, operation: Operation) {
@@ -269,10 +269,6 @@ impl Ted {
 
     pub fn buffer(&self) -> &Buffer {
         self.buf_op.buffer()
-    }
-    
-    pub fn buffer_mut(&mut self) -> &mut Buffer {
-        self.buf_op.buffer_mut()
     }
 
     pub fn aux_buffer(&self, index: usize) -> Option<&Buffer> {

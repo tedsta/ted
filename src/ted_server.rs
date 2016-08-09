@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use buffer_operator::BufferOperator;
 use net;
-use operation::{OpCoords, Operation};
+use operation::Operation;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request<'a> {
@@ -69,9 +69,11 @@ impl TedServer {
     }
 
     fn handle_packet(&mut self, client_id: net::ClientId, packet: &mut net::InPacket) {
+        println!("handling packet");
         let packet: Request = packet.read().unwrap();
         match packet {
             Request::Op(client_version, op) => {
+                println!("Processing op");
                 self.process_operation(client_id, client_version, op.into_owned());
             },
             Request::Command(client_version, cmd) => {

@@ -27,39 +27,6 @@ impl Operation {
         }
     }
 
-    pub fn set_coords(&mut self, coords: &OpCoords) {
-        match *self {
-            InsertChar(ref mut index, _) => {
-                match *coords {
-                    OpCoords::InsertChar(new_index) => {
-                    },
-                    _ => { panic!("Tried to set coords with non-matching coords"); },
-                }
-            },
-            Insert(ref mut index, _) => {
-                match *coords {
-                    OpCoords::Insert(new_index) => {
-                    },
-                    _ => { panic!("Tried to set coords with non-matching coords"); },
-                }
-            },
-            RemoveChar(ref mut index, _) => {
-                match *coords {
-                    OpCoords::RemoveChar(new_index) => {
-                    },
-                    _ => { panic!("Tried to set coords with non-matching coords"); },
-                }
-            },
-            Remove(ref mut start, ref mut end, _) => {
-                match *coords {
-                    OpCoords::Remove(new_start, new_end) => {
-                    },
-                    _ => { panic!("Tried to set coords with non-matching coords"); },
-                }
-            },
-        }
-    }
-
     pub fn do_before(&self, mut op: &mut Operation) -> bool {
         let (op_start, op_end, bias): (u64, u64, i64) =
             match *self {

@@ -3,13 +3,13 @@ use std::io;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::result::Result;
-use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{self, channel, Receiver, Sender, TryRecvError};
 use std::thread::{Builder, spawn};
 
 use rustc_serialize::Encodable;
 use rustc_serialize::Decodable;
 
-use bincode::{EncoderWriter, EncodingError, DecoderReader, DecodingError, encode_into, decode_from, SizeLimit};
+use bincode::{EncodingError, DecodingError, encode_into, decode_from, SizeLimit};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Some basic types
@@ -51,11 +51,11 @@ impl ServerSlot {
     }
     
     pub fn send(&self, client_id: ClientId, packet: OutPacket) {
-        self.sender.send(SlotOutMsg::SendPacket(self.id, client_id, packet));
+        self.sender.send(SlotOutMsg::SendPacket(self.id, client_id, packet)).unwrap();
     }
     
     pub fn broadcast(&self, packet: OutPacket) {
-        self.sender.send(SlotOutMsg::BroadcastPacket(self.id, packet));
+        self.sender.send(SlotOutMsg::BroadcastPacket(self.id, packet)).unwrap();
     }
     
     pub fn receive(&self) -> SlotInMsg {
@@ -223,7 +223,7 @@ impl Server {
                                 received_packets += 1;
                                 
                                 // Send the received packet to the slot the client is in
-                                client_slots[&client_id].send(SlotInMsg::ReceivedPacket(client_id, packet));
+                                client_slots[&client_id].send(SlotInMsg::ReceivedPacket(client_id, packet)).unwrap();
                             },
                             None => {
                                 // Client disconnected
@@ -289,7 +289,7 @@ impl Server {
                                                 client_slots.get_mut(&client_id)
                                                     .expect("Failed to get client slot")
                                                     .clone_from(slot_in_t);
-                                                slot_in_t.send(SlotInMsg::Joined(client_id));
+                                                slot_in_t.send(SlotInMsg::Joined(client_id)).unwrap();
                                             } else {
                                                 println!("WARNING: Non-owning slot {} tried to transfer client {}", slot_id, client_id);
                                             }
@@ -318,7 +318,7 @@ fn client_acceptor(listener: TcpListener, new_client_t: Sender<TcpStream>) {
         match stream {
             Err(e) => { println!("Incoming connection failed: {}", e); },
             Ok(stream) => {
-                new_client_t.send(stream);
+                new_client_t.send(stream).unwrap();
             }
         }
     }
@@ -335,7 +335,7 @@ fn handle_client_in(client_id: ClientId, mut stream: TcpStream, packet_in_t: Sen
                     break;
                 },
             };
-        packet_in_t.send((client_id, Some(packet)));
+        packet_in_t.send((client_id, Some(packet))).unwrap();
     }
 }
 
@@ -548,7 +548,7 @@ fn write_u16<T: Write>(writer: &mut T, data: u16) -> io::Result<usize> {
     use std::io::{Error, ErrorKind};
     use std::mem;
 
-    let mut buf: [u8; 2] = unsafe { mem::transmute(data) };
+    let buf: [u8; 2] = unsafe { mem::transmute(data) };
     match writer.write(&buf) {
         Ok(bytes_written) => {
             if bytes_written == 2 {
@@ -587,7 +587,7 @@ fn write_u32<T: Write>(writer: &mut T, data: u32) -> io::Result<usize> {
     use std::io::{Error, ErrorKind};
     use std::mem;
 
-    let mut buf: [u8; 4] = unsafe { mem::transmute(data) };
+    let buf: [u8; 4] = unsafe { mem::transmute(data) };
     match writer.write(&buf) {
         Ok(bytes_written) => {
             if bytes_written == 4 {

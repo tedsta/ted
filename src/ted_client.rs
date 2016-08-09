@@ -1,6 +1,4 @@
 use std::borrow::Cow;
-use std::collections::VecDeque;
-use std::io;
 
 use cursor::Cursor;
 use net;
@@ -104,6 +102,7 @@ impl TedClient {
     }
 
     fn cursor_moved(&mut self, cursor: &Cursor) {
+        // TODO: Send new position to server
     }
 
     fn merge_synced_ops(&mut self, ted: &mut Ted) {
