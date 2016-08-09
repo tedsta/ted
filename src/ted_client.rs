@@ -53,7 +53,7 @@ impl TedClient {
         for cmd in &ted.cmd_log[self.cmd_queue..] {
             self.send_command(cmd);
         }
-        self.op_queue = ted.log.len();
+        self.cmd_queue = ted.cmd_log.len();
     }
 
     pub fn handle_packet(&mut self, ted: &mut Ted, packet: &mut net::InPacket) {

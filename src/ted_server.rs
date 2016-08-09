@@ -8,8 +8,8 @@ use operation::Operation;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub enum Request<'a> {
-    Op(u64, Cow<'a, Operation>), // Op(client_version, op_id, op)
-    Command(u64, Cow<'a, String>), // Command(client_version, op_id, op)
+    Op(u64, Cow<'a, Operation>),   // Op(client_version, op)
+    Command(u64, Cow<'a, String>), // Command(client_version, op)
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -69,11 +69,9 @@ impl TedServer {
     }
 
     fn handle_packet(&mut self, client_id: net::ClientId, packet: &mut net::InPacket) {
-        println!("handling packet");
         let packet: Request = packet.read().unwrap();
         match packet {
             Request::Op(client_version, op) => {
-                println!("Processing op");
                 self.process_operation(client_id, client_version, op.into_owned());
             },
             Request::Command(client_version, cmd) => {
@@ -89,8 +87,6 @@ impl TedServer {
             let client_data = self.client_data.get_mut(&client_id).unwrap();
             let merge_start = client_version as usize;
             let merge_end = self.timeline.len();
-
-            println!("Processing operation");
 
             // Adjust op's coordinates because client may not know what happened since 
             let mut op_success = true;
