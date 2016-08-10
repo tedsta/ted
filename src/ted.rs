@@ -29,6 +29,7 @@ pub struct Ted {
     pub cursor: Cursor,
 
     buf_op: BufferOperator,
+    cmd_buffer: BufferOperator,
 
     pub log: Vec<Operation>,
     log_index: usize, // Current position in the log from undoing/redoing
@@ -50,6 +51,7 @@ impl Ted {
             cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
             buf_op: BufferOperator::new(),
+            cmd_buffer: BufferOperator::new(),
             
             log: Vec::new(),
             log_index: 0,
@@ -71,6 +73,7 @@ impl Ted {
             cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
             buf_op: BufferOperator::from_string(text),
+            cmd_buffer: BufferOperator::new(),
             
             log: Vec::new(),
             log_index: 0,
@@ -92,6 +95,7 @@ impl Ted {
             cursor: Cursor { line: 0, column: 0, buf_index: 0 },
 
             buf_op: try!(BufferOperator::from_file(path)),
+            cmd_buffer: BufferOperator::new(),
             
             log: Vec::new(),
             log_index: 0,
@@ -218,21 +222,21 @@ impl Ted {
     fn command_handle_event(&mut self, e: Event) {
         match e {
             Event::Backspace => {
-                if self.aux_buffer(0).unwrap().len() > 0 {
-                    let end = self.aux_buffer(0).unwrap().len()-1;
-                    self.aux_buffer_mut(0).unwrap().remove(end, end);
+                if self.cmd_buffer.buffer().len() > 0 {
+                    let end = self.cmd_buffer.buffer().len()-1;
+                    self.cmd_buffer.buffer_mut().remove(end, end);
                     self.dirty = true;
                 }
             },
             Event::Char(c) => {
-                let end = self.aux_buffer(0).unwrap().len();
-                self.aux_buffer_mut(0).unwrap().insert(end, format!("{}", c).as_str());
+                let end = self.cmd_buffer.buffer().len();
+                self.cmd_buffer.buffer_mut().insert(end, format!("{}", c).as_str());
                 self.dirty = true;
             },
             Event::Enter => {
-                let command = self.aux_buffer(0).unwrap().buffer().clone();
+                let command = self.cmd_buffer.buffer().buffer().clone();
                 self.execute_command(command);
-                self.aux_buffer_mut(0).unwrap().clear();
+                self.cmd_buffer.buffer_mut().clear();
                 self.mode = Mode::Normal;
                 self.dirty = true;
             },
@@ -245,10 +249,7 @@ impl Ted {
 
     pub fn save<P: AsRef<Path>>(&self, path: &P) -> io::Result<()> {
         // Open the path in read-only mode, returns `io::Result<File>`
-        let mut file = match File::create(path) {
-            Err(why) => panic!("couldn't open {}: {}", path.as_ref().display(), why),
-            Ok(file) => file,
-        };
+        let mut file = try!(File::create(path));
 
         file.write_all(&self.buf_op.buffer().buffer().as_bytes())
     }
@@ -271,12 +272,8 @@ impl Ted {
         self.buf_op.buffer()
     }
 
-    pub fn aux_buffer(&self, index: usize) -> Option<&Buffer> {
-        self.buf_op.aux_buffer(index)
-    }
-    
-    pub fn aux_buffer_mut(&mut self, index: usize) -> Option<&mut Buffer> {
-        self.buf_op.aux_buffer_mut(index)
+    pub fn command_buffer(&self) -> &Buffer {
+        self.cmd_buffer.buffer()
     }
 
     pub fn running(&self) -> bool {

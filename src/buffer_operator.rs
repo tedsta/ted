@@ -11,7 +11,6 @@ use operation::Operation;
 
 pub struct BufferOperator {
     buffer: Buffer,
-    aux_buffers: Vec<Buffer>,
 
     pub dirty: bool,
     pub file_path: Option<String>,
@@ -21,7 +20,6 @@ impl BufferOperator {
     pub fn new() -> BufferOperator {
         BufferOperator {
             buffer: Buffer::new(),
-            aux_buffers: vec![Buffer::new()],
 
             dirty: true,
             file_path: None,
@@ -31,7 +29,6 @@ impl BufferOperator {
     pub fn from_string(text: String) -> BufferOperator {
         BufferOperator {
             buffer: Buffer::from_string(text),
-            aux_buffers: vec![Buffer::new()],
 
             dirty: true,
             file_path: None,
@@ -46,7 +43,6 @@ impl BufferOperator {
 
         Ok(BufferOperator {
             buffer: Buffer::from_string(file_contents),
-            aux_buffers: vec![Buffer::new()],
 
             dirty: true,
             file_path: Some(path),
@@ -72,14 +68,6 @@ impl BufferOperator {
     
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffer
-    }
-
-    pub fn aux_buffer(&self, index: usize) -> Option<&Buffer> {
-        self.aux_buffers.get(index)
-    }
-    
-    pub fn aux_buffer_mut(&mut self, index: usize) -> Option<&mut Buffer> {
-        self.aux_buffers.get_mut(index)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

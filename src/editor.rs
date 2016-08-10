@@ -119,8 +119,7 @@ impl Editor {
 
     fn present(&mut self) {
         use std::cmp;
-
-        // Clear dirty flag
+// Clear dirty flag
         self.ted.dirty = false;
 
         self.rust_box.clear();
@@ -135,13 +134,11 @@ impl Editor {
 
         // Draw command
         if self.ted.mode() == Mode::Command {
-            if let Some(command) = self.ted.aux_buffer(0) {
-                self.rust_box.print(0, (self.ted.height + 1) as usize,
-                                    rustbox::RB_BOLD, Color::White, Color::Default, ":");
-                self.rust_box.print(1, (self.ted.height + 1) as usize,
-                                    rustbox::RB_BOLD, Color::White, Color::Default,
-                                    command.buffer().as_str());
-            }
+            self.rust_box.print(0, (self.ted.height + 1) as usize,
+                                rustbox::RB_BOLD, Color::White, Color::Default, ":");
+            self.rust_box.print(1, (self.ted.height + 1) as usize,
+                                rustbox::RB_BOLD, Color::White, Color::Default,
+                                self.ted.command_buffer().buffer().as_str());
         } 
 
         // Draw editor status 
