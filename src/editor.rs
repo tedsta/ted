@@ -135,7 +135,7 @@ impl Editor {
 
         // Draw command
         if self.ted.mode() == Mode::Command {
-            if let Some(command) = self.ted.aux_buffer(1) {
+            if let Some(command) = self.ted.aux_buffer(0) {
                 self.rust_box.print(0, (self.ted.height + 1) as usize,
                                     rustbox::RB_BOLD, Color::White, Color::Default, ":");
                 self.rust_box.print(1, (self.ted.height + 1) as usize,
