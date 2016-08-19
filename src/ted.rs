@@ -21,6 +21,12 @@ pub enum Event {
     Char(char),
 }
 
+pub enum TedOperation {
+    Insert(usize, String),
+    Remove(usize, usize, String),
+    Yank(usize, usize),
+}
+
 pub struct Ted {
     path: Option<String>,
     mode: Mode,
