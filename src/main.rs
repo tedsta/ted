@@ -22,6 +22,7 @@ mod operation;
 mod ted;
 mod ted_client;
 mod ted_server;
+mod trie;
 
 fn main() {
 	let yml = load_yaml!("cli.yml");
