@@ -40,7 +40,6 @@ impl<T> Trie<T> {
     }
 
     pub fn get(&self, chars: &[u8]) -> Option<&T> {
-        println!("{:?}", chars);
         if chars.len() == 0 {
             // Made it to a leaf node
             if self.data.is_some() {
@@ -101,4 +100,17 @@ pub fn trie_get_mut() {
     assert!(trie.get(b"a") == Some(&5));
     assert!(trie.get(b"ab") == None);
     assert!(trie.get(b"abc") == Some(&8));
+}
+
+#[test]
+pub fn trie_multiple_root() {
+    let mut trie = Trie::new();
+    trie.insert(b"abc", Some(7u32)).unwrap();
+    trie.insert(b"a", Some(5u32)).unwrap();
+    trie.insert(b"bbc", Some(42u32)).unwrap();
+
+    assert!(trie.get(b"a") == Some(&5));
+    assert!(trie.get(b"ab") == None);
+    assert!(trie.get(b"abc") == Some(&7));
+    assert!(trie.get(b"bbc") == Some(&42));
 }
