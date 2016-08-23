@@ -21,10 +21,12 @@ pub enum Event {
     Char(char),
 }
 
-pub enum TedOperation {
-    Insert(usize, String),
-    Remove(usize, usize, String),
-    Yank(usize, usize),
+pub struct TedOperation {
+    args: Vec<ParameterType>,
+}
+
+pub enum ParameterType {
+    Position,
 }
 
 pub struct Ted {
@@ -211,8 +213,7 @@ impl Ted {
                 let op = self.buf_op.insert_char(index, '\n');
                 self.log(op);
                 self.cursor.column = 0;
-                self.cursor.line += 1;
-                self.cursor.buf_index += 1;
+                self.cursor_down();
             },
             Event::Char(c) => {
                 let index = self.cursor.buf_index;
