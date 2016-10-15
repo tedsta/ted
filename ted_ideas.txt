@@ -12,3 +12,13 @@
     - member/parameter variable declarations
     - variable definitions
     - blocks (if, while, match, fn, struct, enum, etc)
+
+# key bindings
+- w: go to the beginning of the next word.
+- e: go to the end of the current word, or the end of the next word if already at the end of the current word.
+- b: go to the beginning of the current word, or the beginning of the last word if already at the beginning of the current word.
+- d
+    - w: delete everything from the cursor up to the beginning of the next word.
+    - e: delete everything from the cursor through the end of the word.
+    - t
+        - <char>: delete everything from the cursor up to the next occurrence of <char>.

@@ -158,6 +158,21 @@ impl Editor {
                                     rustbox::RB_BOLD, Color::Green, Color::Default,
                                     "--COMMAND--");
             },
+            Mode::VisualChar => {
+                self.rust_box.print(0, self.ted.height as usize,
+                                    rustbox::RB_BOLD, Color::Yellow, Color::Default,
+                                    "--VISUAL CHARACTER--");
+            },
+            Mode::VisualLine => {
+                self.rust_box.print(0, self.ted.height as usize,
+                                    rustbox::RB_BOLD, Color::Yellow, Color::Default,
+                                    "--VISUAL LINE--");
+            },
+            Mode::VisualBlock => {
+                self.rust_box.print(0, self.ted.height as usize,
+                                    rustbox::RB_BOLD, Color::Yellow, Color::Default,
+                                    "--VISUAL BLOCK--");
+            },
         }
 
         // Draw the cursor

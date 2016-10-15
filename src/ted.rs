@@ -12,6 +12,9 @@ pub enum Mode {
     Normal,
     Insert,
     Command,
+    VisualChar,
+    VisualLine,
+    VisualBlock,
 }
 
 pub enum Event {
@@ -120,6 +123,9 @@ impl Ted {
             Mode::Normal => { self.normal_handle_event(e); },
             Mode::Insert => { self.insert_handle_event(e); },
             Mode::Command => { self.command_handle_event(e); },
+            Mode::VisualChar => { self.visual_char_handle_event(e); },
+            Mode::VisualLine => { self.visual_line_handle_event(e); },
+            Mode::VisualBlock => { self.visual_block_handle_event(e); },
         }
     }
 
@@ -157,9 +163,17 @@ impl Ted {
                     'i' => {
                         self.mode = Mode::Insert;
                         self.dirty = true;
-                    }
+                    },
                     ':' => {
                         self.mode = Mode::Command;
+                        self.dirty = true;
+                    },
+                    'v' => {
+                        self.mode = Mode::VisualChar;
+                        self.dirty = true;
+                    },
+                    'V' => {
+                        self.mode = Mode::VisualLine;
                         self.dirty = true;
                     },
                     'h' => {
@@ -251,6 +265,48 @@ impl Ted {
                 self.mode = Mode::Normal;
                 self.dirty = true;
             }
+        }
+    }
+
+    // Visual character mode
+    fn visual_char_handle_event(&mut self, e: Event) {
+        match e {
+            Event::Esc => {
+                self.mode = Mode::Normal;
+                self.dirty = true;
+            },
+            Event::Backspace => { },
+            Event::Char(_) => {
+            },
+            _ => { },
+        }
+    }
+
+    // Visual line mode
+    fn visual_line_handle_event(&mut self, e: Event) {
+        match e {
+            Event::Esc => {
+                self.mode = Mode::Normal;
+                self.dirty = true;
+            },
+            Event::Backspace => { },
+            Event::Char(_) => {
+            },
+            _ => { },
+        }
+    }
+
+    // Visual block mode
+    fn visual_block_handle_event(&mut self, e: Event) {
+        match e {
+            Event::Esc => {
+                self.mode = Mode::Normal;
+                self.dirty = true;
+            },
+            Event::Backspace => { },
+            Event::Char(_) => {
+            },
+            _ => { },
         }
     }
 
