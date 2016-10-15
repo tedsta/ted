@@ -1,22 +1,23 @@
 use std;
+use std::hash::Hash;
 use std::collections::HashMap;
 
 pub type Result<T> = std::result::Result<T, String>;
 
-pub struct Trie<T> {
+pub struct Trie<K: Clone+Eq+Hash, T> {
     data: Option<T>,
-    children: HashMap<u8, Trie<T>>,
+    children: HashMap<K, Trie<K, T>>,
 }
 
-impl<T> Trie<T> {
-    pub fn new() -> Trie<T> {
+impl<K: Clone+Eq+Hash, T> Trie<K, T> {
+    pub fn new() -> Trie<K, T> {
         Trie {
             data: None,
             children: HashMap::new(),
         }
     }
 
-    pub fn insert(&mut self, chars: &[u8], data: Option<T>) -> Result<()> {
+    pub fn insert(&mut self, chars: &[K], data: Option<T>) -> Result<()> {
         if chars.len() == 0 {
             // Made it to a leaf node
             if self.data.is_none() {
@@ -35,11 +36,11 @@ impl<T> Trie<T> {
         // It's a new branch in the tree
         let mut trie = Trie::new();
         trie.insert(&chars[1..], data);
-        self.children.insert(chars[0], trie);
+        self.children.insert(chars[0].clone(), trie);
         Ok(())
     }
 
-    pub fn get(&self, chars: &[u8]) -> Option<&T> {
+    pub fn get(&self, chars: &[K]) -> Option<&T> {
         if chars.len() == 0 {
             // Made it to a leaf node
             if self.data.is_some() {
@@ -52,7 +53,7 @@ impl<T> Trie<T> {
         self.children.get(&chars[0]).and_then(|c| c.get(&chars[1..]))
     }
 
-    pub fn get_mut(&mut self, chars: &[u8]) -> Option<&mut T> {
+    pub fn get_mut(&mut self, chars: &[K]) -> Option<&mut T> {
         if chars.len() == 0 {
             // Made it to a leaf node
             if self.data.is_some() {
