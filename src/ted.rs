@@ -12,9 +12,9 @@ pub enum Mode {
     Normal,
     Insert,
     Command,
-    VisualChar,
-    VisualLine,
-    VisualBlock,
+    VisualChar { start: u64 },
+    VisualLine { start: u64 },
+    VisualBlock { start: u64 },
 }
 
 pub enum Event {
@@ -123,9 +123,9 @@ impl Ted {
             Mode::Normal => { self.normal_handle_event(e); },
             Mode::Insert => { self.insert_handle_event(e); },
             Mode::Command => { self.command_handle_event(e); },
-            Mode::VisualChar => { self.visual_char_handle_event(e); },
-            Mode::VisualLine => { self.visual_line_handle_event(e); },
-            Mode::VisualBlock => { self.visual_block_handle_event(e); },
+            Mode::VisualChar { start: _ } => { self.visual_char_handle_event(e); },
+            Mode::VisualLine { start: _ } => { self.visual_line_handle_event(e); },
+            Mode::VisualBlock { start: _ } => { self.visual_block_handle_event(e); },
         }
     }
 
@@ -169,11 +169,11 @@ impl Ted {
                         self.dirty = true;
                     },
                     'v' => {
-                        self.mode = Mode::VisualChar;
+                        self.mode = Mode::VisualChar { start: self.cursor.buf_index };
                         self.dirty = true;
                     },
                     'V' => {
-                        self.mode = Mode::VisualLine;
+                        self.mode = Mode::VisualLine { start: self.cursor.buf_index };
                         self.dirty = true;
                     },
                     'h' => {
@@ -345,6 +345,11 @@ impl Ted {
 
     pub fn is_dirty(&self) -> bool {
         self.dirty || self.buf_op.dirty
+    }
+
+    pub fn clean(&mut self) {
+        self.dirty = false;
+        self.buf_op.dirty = false;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
