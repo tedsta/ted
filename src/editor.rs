@@ -191,6 +191,7 @@ impl Editor {
             let k = if let event::Event::Key(k) = e { k } else { continue; };
             let e = match k {
                 Key::Char('\n') => { Event::Enter },
+                Key::Char('~') => { Event::Esc },
                 Key::Char(c) => { Event::Char(c) },
                 Key::Backspace => { Event::Backspace },
                 //Key::Escape => { Event::Esc },

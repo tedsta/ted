@@ -188,6 +188,21 @@ impl Ted {
                     'j' => {
                         self.cursor_down();
                     },
+                    'b' => {
+                        if self.cursor.buf_index > 0 &&
+                            (self.buf_op.buffer_bytes()[self.cursor.buf_index as usize - 1] == b' ' ||
+                            self.buf_op.buffer_bytes()[self.cursor.buf_index as usize - 1] == b'\n')
+                        {
+                            self.cursor.buf_index -= 1;
+                        }
+                        while self.cursor.buf_index > 0 &&
+                              self.buf_op.buffer_bytes()[self.cursor.buf_index as usize - 1] != b' ' &&
+                              self.buf_op.buffer_bytes()[self.cursor.buf_index as usize - 1] != b'\n' {
+                            self.cursor.buf_index -= 1;
+                        }
+                        self.cursor.calculate_pos(&self.buf_op.buffer());
+                        self.dirty = true;
+                    },
                     _ => { },
                 }
             },

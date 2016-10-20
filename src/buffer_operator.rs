@@ -65,6 +65,10 @@ impl BufferOperator {
     pub fn buffer(&self) -> &Buffer {
         &self.buffer
     }
+
+    pub fn buffer_bytes(&self) -> &[u8] {
+        &self.buffer.buffer().as_bytes()
+    }
     
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffer

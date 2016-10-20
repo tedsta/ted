@@ -152,4 +152,39 @@ impl Cursor {
         let line_info = buffer.line_info()[self.line as usize];
         self.column = self.buf_index - line_info.buf_index as u64;
     }
+
+    /// Calculates the cursor's line and column within the specified buffer based on buf_index
+    pub fn calculate_pos(&mut self, buffer: &Buffer) {
+        let mut start = 0;
+        let mut stop = buffer.line_info().len() - 1;
+        // Binary search for correct line
+        while start != stop {
+            let mid_line_index = (start + stop) / 2;
+            let mid_buf_index = buffer.line_info()[mid_line_index].buf_index;
+            if mid_buf_index > self.buf_index as usize {
+                stop = mid_line_index - 1;
+            } else if mid_buf_index < self.buf_index as usize {
+                if buffer.line_info()[mid_line_index + 1].buf_index > self.buf_index as usize {
+                    // line at mid_line_index is less than buf_index, line at mid_line_index+1 is
+                    // more than buf_index. It's the line at mid_line_index.
+                    start = mid_line_index;
+                    stop = mid_line_index;
+                } else if buffer.line_info()[mid_line_index + 1].buf_index < self.buf_index as usize {
+                    // Line after mid_line_index has buf_index < self.buf_index also, so we can
+                    // eliminate line at mid_line_index.
+                    start = mid_line_index + 1;
+                } else {
+                    // buf_index at mid_line_index + 1 == self.buf_index
+                    start = mid_line_index + 1;
+                    stop = mid_line_index + 1;
+                }
+            } else {
+                // If mid_buf_index == self.buf_index, it's the line at mid_line_index
+                start = mid_line_index;
+                stop = mid_line_index;
+            }
+        }
+        self.line = start as u64;
+        self.calculate_column(buffer);
+    }
 }
